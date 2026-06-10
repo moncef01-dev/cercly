@@ -15,7 +15,7 @@ const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "CERCY",
+  title: "CERCLY",
   description: "منصة إدارة جمع وإعادة تدوير النفايات",
   icons: { icon: "/favicon-cercy.ico" },
 };

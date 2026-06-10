@@ -23,7 +23,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
   return (
     <div className="screen active" id="screen-login">
       <div className="login-wrap">
-        <div className="login-logo">♻ CERCY</div>
+        <div className="login-logo">♻ CERCLY</div>
         <div className="login-sub">منصة إدارة جمع وإعادة تدوير النفايات</div>
         <div className="login-card">
           <h2>مرحباً بك</h2>

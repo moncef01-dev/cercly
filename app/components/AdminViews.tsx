@@ -54,7 +54,7 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
 
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>الإدارة العامة — CERCY</div>
+        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>الإدارة العامة — CERCLY</div>
         <div className="stats">
           <div className="stat-card"><div className="stat-val">{users.filter((u) => u.role === 'partner').length}</div><div className="stat-label">شركاء مسجلون</div><div className="stat-change">↑ 28 هذا الأسبوع</div></div>
           <div className="stat-card"><div className="stat-val">48 طن</div><div className="stat-label">إجمالي التدوير</div></div>

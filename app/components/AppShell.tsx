@@ -125,7 +125,7 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
       <div className="app-shell">
         <div className="topbar">
           <div className="topbar-inner">
-            <div className="topbar-logo">♻ CERCY</div>
+            <div className="topbar-logo">♻ CERCLY</div>
             <div className="topbar-right">
               <button className="notif-btn" onClick={() => setNotifOpen(!notifOpen)}>
                 <Bell size={18} />

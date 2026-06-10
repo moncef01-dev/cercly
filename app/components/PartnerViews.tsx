@@ -140,7 +140,7 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
   if (currentTab === 'dashboard') {
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>شركاء CERCY</div>
+        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>شركاء CERCLY</div>
         <div className="hero-card">
           <div className="hero-title">المواد المعاد تدويرها منذ الانضمام</div>
           <div className="hero-val">{profile.totalRecycled} طن</div>
