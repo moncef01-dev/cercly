@@ -17,6 +17,7 @@ interface MapViewProps {
   points: CollectionPoint[];
   center?: [number, number];
   zoom?: number;
+  onCollect?: (point: CollectionPoint) => void;
 }
 
 function getMarkerIcon(status: string, order: number) {
@@ -51,7 +52,7 @@ function MapBounds({ points }: { points: MapViewProps['points'] }) {
   return null;
 }
 
-export default function MapView({ points, zoom = 13 }: MapViewProps) {
+export default function MapView({ points, zoom = 13, onCollect }: MapViewProps) {
   const isClient = useIsClient();
 
   if (!isClient) {
@@ -102,6 +103,20 @@ export default function MapView({ points, zoom = 13 }: MapViewProps) {
             <div style={{ fontSize: '11px', color: '#666', textAlign: 'center', marginTop: '2px' }}>
               {p.status === 'completed' ? '✅ منجز' : '⏳ قادم'}
             </div>
+            {p.status !== 'completed' && onCollect && (
+              <div style={{ textAlign: 'center', marginTop: '8px' }}>
+                <button
+                  onClick={() => onCollect(p)}
+                  style={{
+                    background: '#2d6318', color: '#fff', border: 'none',
+                    borderRadius: '8px', padding: '6px 16px', fontSize: '12px',
+                    fontWeight: 600, cursor: 'pointer', width: '100%',
+                  }}
+                >
+                  تسجيل الجمع
+                </button>
+              </div>
+            )}
           </Popup>
         </Marker>
       ))}

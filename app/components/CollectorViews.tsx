@@ -4,7 +4,7 @@ import { useState, lazy, Suspense, useMemo } from 'react';
 import { useStore } from '../lib/store';
 import type { Tab, MaterialType } from '../lib/types';
 import { generateCollectionId, formatTimestamp } from '../lib/data';
-import { MapPin, Check, Camera, Map, Bell, UserCheck, UserX } from 'lucide-react';
+import { MapPin, Check, Camera, Map, Bell, UserCheck, UserX, X } from 'lucide-react';
 
 const MapView = lazy(() => import('./MapView'));
 
@@ -37,10 +37,59 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
   const [collMaterials, setCollMaterials] = useState<MaterialType[]>([]);
   const [collSubmitted, setCollSubmitted] = useState(false);
 
+  const [mapCollectPoint, setMapCollectPoint] = useState<typeof collectionPoints[number] | null>(null);
+  const [mapCollectWeight, setMapCollectWeight] = useState('');
+  const [mapCollectMaterials, setMapCollectMaterials] = useState<MaterialType[]>([]);
+  const [mapCollectSubmitted, setMapCollectSubmitted] = useState(false);
+
   function toggleMaterial(mat: MaterialType) {
     setCollMaterials((prev) =>
       prev.includes(mat) ? prev.filter((m) => m !== mat) : [...prev, mat],
     );
+  }
+
+  function toggleMapMaterial(mat: MaterialType) {
+    setMapCollectMaterials((prev) =>
+      prev.includes(mat) ? prev.filter((m) => m !== mat) : [...prev, mat],
+    );
+  }
+
+  function handleMapCollection() {
+    const weight = parseInt(mapCollectWeight);
+    if (!weight || weight <= 0 || !mapCollectPoint) return;
+
+    addCollection({
+      id: generateCollectionId(),
+      collectorId: 'c1',
+      pointId: mapCollectPoint.id,
+      pointName: mapCollectPoint.name,
+      weight,
+      materials: mapCollectMaterials.length > 0 ? mapCollectMaterials : mapCollectPoint.materials as MaterialType[],
+      timestamp: new Date().toISOString(),
+      date: formatTimestamp(new Date()).date,
+      time: formatTimestamp(new Date()).time,
+    });
+
+    setPointStatus({ id: mapCollectPoint.id, status: 'completed' });
+
+    addNotification({
+      id: `n-map-${Date.now()}`,
+      text: `تم تسجيل جمع ${weight} كجم من ${mapCollectPoint.name}`,
+      time: 'الآن', isNew: true, type: 'info',
+    });
+
+    setMapCollectSubmitted(true);
+    setMapCollectPoint(null);
+    setMapCollectWeight('');
+    setMapCollectMaterials([]);
+    setTimeout(() => setMapCollectSubmitted(false), 3000);
+  }
+
+  function handleMapCollect(point: typeof collectionPoints[number]) {
+    setMapCollectPoint(point);
+    setMapCollectMaterials(point.materials as MaterialType[]);
+    setMapCollectWeight('');
+    setMapCollectSubmitted(false);
   }
 
   function handleSubmitCollection() {
@@ -161,19 +210,65 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
               جاري تحميل الخريطة…
             </div>
           }>
-            <MapView points={collectionPoints} />
+            <MapView points={collectionPoints} onCollect={handleMapCollect} />
           </Suspense>
         </div>
+
+        {mapCollectSubmitted && (
+          <div className="alert success"><Check size={16} /> تم تسجيل الجمع بنجاح</div>
+        )}
+
+        {mapCollectPoint && !mapCollectSubmitted && (
+          <div className="card">
+            <div className="card-header">
+              <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <MapPin size={16} /> {mapCollectPoint.name}
+              </span>
+              <button className="btn-sm" style={{ border: 'none', background: 'none', color: 'var(--text-3)', cursor: 'pointer', padding: '4px' }}
+                onClick={() => { setMapCollectPoint(null); setMapCollectMaterials([]); }}>
+                <X size={16} />
+              </button>
+            </div>
+            <div className="form-row">
+              <div className="form-label">الوزن (كجم)</div>
+              <input className="inp" type="number" style={{ margin: 0 }} value={mapCollectWeight}
+                onChange={(e) => setMapCollectWeight(e.target.value)} placeholder="أدخل الوزن" />
+            </div>
+            <div className="form-row">
+              <div className="form-label">المواد</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                {materials.map((m) => (
+                  <label key={m.id} style={{
+                    display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px',
+                    border: `1.5px solid ${mapCollectMaterials.includes(m.id) ? 'var(--green-mid)' : 'var(--border)'}`,
+                    borderRadius: '8px', cursor: 'pointer', fontSize: '12px',
+                    background: mapCollectMaterials.includes(m.id) ? 'var(--green-50)' : '#fff',
+                  }}>
+                    <input type="checkbox" checked={mapCollectMaterials.includes(m.id)}
+                      onChange={() => toggleMapMaterial(m.id)} /> {m.icon} {m.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="btn-row">
+              <button className="btn-sm primary" onClick={handleMapCollection}>
+                <Check size={14} /> تأكيد الجمع
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="card">
           <div className="card-title" style={{ marginBottom: '10px' }}>المسار الأمثل اليوم</div>
-          {collectionPoints.sort((a, b) => a.order - b.order).map((p) => {
+          {[...collectionPoints].sort((a, b) => a.order - b.order).map((p) => {
             const isCompleted = p.status === 'completed';
             const bg = isCompleted ? 'var(--green-50)' : '#fff3e0';
             const color = isCompleted ? 'var(--green-mid)' : 'var(--orange)';
             const badge = isCompleted ? 'badge-green' : 'badge-orange';
             const label = isCompleted ? 'منجز' : 'قادم';
             return (
-              <div className="order-row" key={p.id}>
+              <div className="order-row" key={p.id} onClick={() => !isCompleted && handleMapCollect(p)}
+                style={{ cursor: isCompleted ? 'default' : 'pointer' }}>
                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 500, flexShrink: 0 }}>
                   {p.order}
                 </div>

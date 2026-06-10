@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { useStore } from '../lib/store';
-import type { Tab } from '../lib/types';
+import type { Tab, MaterialType } from '../lib/types';
 import Chart from './Chart';
-import { Check, X, Calendar, Clock } from 'lucide-react';
+import { Check, X, Calendar, Clock, Plus, MapPin } from 'lucide-react';
 
 interface PartnerViewsProps {
   currentTab: Tab;
@@ -21,7 +21,65 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
   const [editAddress, setEditAddress] = useState(profile.address);
   const [editPhone, setEditPhone] = useState(profile.phone);
   const [saved, setSaved] = useState(false);
-  const notifCounter = useRef(0);
+
+  const materials = useStore((s) => s.materials);
+  const collectionPoints = useStore((s) => s.collectionPoints);
+  const addCollectionPoint = useStore((s) => s.addCollectionPoint);
+  const addSchedule = useStore((s) => s.addSchedule);
+
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [reqAddress, setReqAddress] = useState('');
+  const [reqMaterials, setReqMaterials] = useState<MaterialType[]>([]);
+  const [reqDate, setReqDate] = useState('');
+  const [reqTime, setReqTime] = useState('10:00');
+  const [reqSubmitted, setReqSubmitted] = useState(false);
+
+  function handleRequestCollection() {
+    if (!reqAddress.trim() || reqMaterials.length === 0 || !reqDate) return;
+
+    const pointId = `p-${Date.now()}`;
+    addCollectionPoint({
+      id: pointId,
+      name: reqAddress.trim(),
+      address: reqAddress.trim(),
+      lat: 36.3500 + Math.random() * 0.02,
+      lng: 6.6200 + Math.random() * 0.02,
+      materials: reqMaterials,
+      status: 'upcoming',
+      order: collectionPoints.length + 1,
+    });
+
+    addSchedule({
+      id: `sch-${Date.now()}`,
+      partnerId: 'u4',
+      pointId,
+      pointName: reqAddress.trim(),
+      address: reqAddress.trim(),
+      scheduledDate: reqDate,
+      scheduledTime: reqTime,
+      status: 'pending',
+    });
+
+    addNotification({
+      id: `n-req-${Date.now()}`,
+      text: `تم تقديم طلب جمع جديد — ${reqAddress.trim()}`,
+      time: 'الآن', isNew: true, type: 'info',
+    });
+
+    setReqSubmitted(true);
+    setShowRequestForm(false);
+    setReqAddress('');
+    setReqMaterials([]);
+    setReqDate('');
+    setReqTime('10:00');
+    setTimeout(() => setReqSubmitted(false), 3000);
+  }
+
+  function toggleReqMaterial(mat: MaterialType) {
+    setReqMaterials((prev) =>
+      prev.includes(mat) ? prev.filter((m) => m !== mat) : [...prev, mat],
+    );
+  }
 
   const impactItems = useMemo(() => [
     { icon: '🌳', label: 'أشجار محمية', val: Math.round(profile.totalRecycled * 10).toString() },
@@ -49,17 +107,15 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
   };
 
   function handleConfirm(id: string, pointName: string) {
-    notifCounter.current += 1;
     confirmAttendance(id);
     addNotification({
-      id: `n-${notifCounter.current}`,
+      id: `n-confirm-${Date.now()}`,
       text: `تم تأكيد حضور موعد الجمع — ${pointName}`,
       time: 'الآن', isNew: true, type: 'info',
     });
   }
 
   function handlePostpone(id: string, pointName: string) {
-    notifCounter.current += 1;
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const day = tomorrow.getDate().toString().padStart(2, '0');
@@ -69,7 +125,7 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
 
     postponeAttendance({ id, newDate, newTime });
     addNotification({
-      id: `n-${notifCounter.current}`,
+      id: `n-postpone-${Date.now()}`,
       text: `تم تأجيل موعد الجمع في ${pointName} إلى ${newDate} الساعة ${newTime}`,
       time: 'الآن', isNew: true, type: 'warning',
     });
@@ -90,6 +146,66 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
           <div className="hero-val">{profile.totalRecycled} طن</div>
           <div className="hero-sub">عدد العمليات: {profile.operations} • هذا الشهر: 2.4 طن</div>
         </div>
+        {reqSubmitted && (
+          <div className="alert success"><Check size={16} /> تم تقديم طلب الجمع بنجاح</div>
+        )}
+
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">طلب جمع جديد</span>
+            {!showRequestForm && (
+              <button className="btn-sm primary" onClick={() => setShowRequestForm(true)}>
+                <Plus size={14} /> طلب جمع
+              </button>
+            )}
+          </div>
+          {showRequestForm && (
+            <>
+              <div className="form-row">
+                <div className="form-label">العنوان</div>
+                <input className="inp" type="text" style={{ margin: 0 }} value={reqAddress}
+                  onChange={(e) => setReqAddress(e.target.value)} placeholder="أدخل عنوان موقع الجمع" />
+              </div>
+              <div className="form-row">
+                <div className="form-label">المواد المراد جمعها</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                  {materials.map((m) => (
+                    <label key={m.id} style={{
+                      display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px',
+                      border: `1.5px solid ${reqMaterials.includes(m.id) ? 'var(--green-mid)' : 'var(--border)'}`,
+                      borderRadius: '8px', cursor: 'pointer', fontSize: '12px',
+                      background: reqMaterials.includes(m.id) ? 'var(--green-50)' : '#fff',
+                    }}>
+                      <input type="checkbox" checked={reqMaterials.includes(m.id)}
+                        onChange={() => toggleReqMaterial(m.id)} /> {m.icon} {m.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div className="form-row" style={{ flex: 1 }}>
+                  <div className="form-label">التاريخ</div>
+                  <input className="inp" type="text" style={{ margin: 0 }} value={reqDate}
+                    onChange={(e) => setReqDate(e.target.value)} placeholder="مثال: 15/06" />
+                </div>
+                <div className="form-row" style={{ flex: 1 }}>
+                  <div className="form-label">الوقت</div>
+                  <input className="inp" type="text" style={{ margin: 0 }} value={reqTime}
+                    onChange={(e) => setReqTime(e.target.value)} placeholder="مثال: 14:30" />
+                </div>
+              </div>
+              <div className="btn-row">
+                <button className="btn-sm primary" onClick={handleRequestCollection}>
+                  <Check size={14} /> تأكيد الطلب
+                </button>
+                <button className="btn-sm" onClick={() => { setShowRequestForm(false); setReqMaterials([]); }}>
+                  <X size={14} /> إلغاء
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
         <div className="stats">
           <div className="stat-card">
             <div className="stat-val">{profile.points}</div>
