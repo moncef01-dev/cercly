@@ -119,10 +119,10 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
 
         {/* 4. Primary Actions */}
         <div className="btn-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--gap-button)' }}>
-          <button className="btn-primary" onClick={() => {}} style={{ width: '100%', pointerEvents: 'none', opacity: 0.9 }}>
+          <button className="btn-primary" onClick={() => { }} style={{ width: '100%', pointerEvents: 'none', opacity: 0.9 }}>
             <Users size={16} /> لوحة الإدارة العامة
           </button>
-          <button className="btn-secondary" onClick={() => {}} style={{ width: '100%', pointerEvents: 'none', opacity: 0.9 }}>
+          <button className="btn-secondary" onClick={() => { }} style={{ width: '100%', pointerEvents: 'none', opacity: 0.9 }}>
             <BarChart3 size={16} /> مؤشرات العمليات
           </button>
         </div>
@@ -200,7 +200,20 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
             <div className="card" style={{ padding: '14px' }} key={u.id}>
               <div className="flex-between">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--light-green)', color: 'var(--primary-green)', display: 'flex', alignItems: 'center', justifyCenter: 'center', fontSize: '13px', fontWeight: 700, justifyContent: 'center' }}>
+                  <div
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      background: 'var(--light-green)',
+                      color: 'var(--primary-green)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '13px',
+                      fontWeight: 700
+                    }}
+                  >
                     {u.name.slice(0, 2)}
                   </div>
                   <div>
