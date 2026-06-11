@@ -40,6 +40,15 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Payment modal states
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [cardName, setCardName] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
   const factoryList = useMemo(() =>
     ['f1', 'f2', 'f3', 'f4', 'f5', 'f6'].map((id) => ({
       id,
@@ -70,9 +79,16 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
       return;
     }
 
-    setIsSubmitting(true);
+    // Show payment modal instead of directly submitting
+    setShowPaymentModal(true);
+  }
+
+  function handleConfirmPayment() {
+    if (!cardName.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvv.trim()) return;
+    setIsProcessingPayment(true);
 
     setTimeout(() => {
+      const qty = parseInt(orderQty);
       const center = inventory.find((c) => c.centerId === orderCenter);
       const mat = materials.find((m) => m.id === orderMaterial);
       const orderId = generateOrderId();
@@ -103,11 +119,22 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
         role: 'factory',
       });
 
-      setOrderSent(true);
+      setIsProcessingPayment(false);
+      setShowPaymentModal(false);
+      setShowSuccessModal(true);
+      setCardName('');
+      setCardNumber('');
+      setCardExpiry('');
+      setCardCvv('');
       setOrderQty('');
       setIsSubmitting(false);
-      setTimeout(() => setOrderSent(false), 3000);
-    }, 1000);
+    }, 1200);
+  }
+
+  function handleCloseSuccess() {
+    setShowSuccessModal(false);
+    setOrderSent(true);
+    setTimeout(() => setOrderSent(false), 3000);
   }
 
   function getInvoiceForOrder(orderId: string) {
@@ -187,6 +214,79 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
 
     return (
       <>
+        {/* Payment Modal */}
+        {showPaymentModal && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+          }}>
+            <div style={{
+              background: '#fff', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '360px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+            }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '4px' }}>بيانات البطاقة البنكية</div>
+              <div className="text-sm" style={{ marginBottom: '20px', opacity: 0.6 }}>يرجى إدخال بيانات الدفع</div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="form-row">
+                  <div className="form-label">اسم حامل البطاقة</div>
+                  <input className="inp" type="text" placeholder="الاسم الكامل" value={cardName} onChange={(e) => setCardName(e.target.value)} />
+                </div>
+                <div className="form-row">
+                  <div className="form-label">رقم البطاقة</div>
+                  <input className="inp" type="text" placeholder="0000 0000 0000 0000" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} maxLength={19} />
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div className="form-row" style={{ flex: 1 }}>
+                    <div className="form-label">تاريخ الانتهاء</div>
+                    <input className="inp" type="text" placeholder="MM/YY" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} maxLength={5} />
+                  </div>
+                  <div className="form-row" style={{ flex: 1 }}>
+                    <div className="form-label">CVV</div>
+                    <input className="inp" type="text" placeholder="123" value={cardCvv} onChange={(e) => setCardCvv(e.target.value)} maxLength={4} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="btn-row" style={{ marginTop: '20px' }}>
+                <button className="btn-primary" style={{ flex: 1 }} onClick={handleConfirmPayment} disabled={isProcessingPayment || !cardName.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvv.trim()}>
+                  {isProcessingPayment ? 'جارٍ المعالجة...' : 'تأكيد الدفع'}
+                </button>
+                <button className="btn-secondary" onClick={() => setShowPaymentModal(false)} disabled={isProcessingPayment}>
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success Modal */}
+        {showSuccessModal && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+          }}>
+            <div style={{
+              background: '#fff', borderRadius: '20px', padding: '32px 24px', width: '100%', maxWidth: '320px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)', textAlign: 'center'
+            }}>
+              <div style={{
+                width: '72px', height: '72px', borderRadius: '50%',
+                background: 'rgba(212,175,55,0.15)', border: '2px solid #D4AF37',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 16px', fontSize: '36px', color: '#D4AF37'
+              }}>
+                ✓
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px' }}>تمت العملية بنجاح</div>
+              <div className="text-sm" style={{ marginBottom: '24px', opacity: 0.7 }}>تم إرسال طلب الشراء</div>
+              <button className="btn-primary" style={{ width: '100%' }} onClick={handleCloseSuccess}>
+                حسناً
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* 1. Header is rendered by AppShell */}
 
         {/* 2. Hero Summary Card (Purchase Summary) */}
@@ -231,28 +331,7 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
           </button>
         </div>
 
-        {/* 5. Main Content - Recycling Companies list */}
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">مصانع التدوير المسجلة</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {factoryList.map((f) => (
-              <div className="order-row" key={f.id} style={{ cursor: 'pointer' }} onClick={() => setViewFactory(f.id)}>
-                <div className="order-avatar" style={{ background: 'var(--light-green)', color: 'var(--primary-green)' }}>
-                  <Factory size={18} />
-                </div>
-                <div className="order-info">
-                  <div className="order-title">{f.name}</div>
-                  <div className="order-sub">{f.orders.length} طلبات شراء</div>
-                </div>
-                <span style={{ fontSize: '18px', color: 'var(--primary-green)' }}>←</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 6. Recent Activity - Available Materials */}
+        {/* 5. Main Content - Available Materials */}
         <div className="card">
           <div className="card-header">
             <span className="card-title">المواد المتاحة للطلب</span>
@@ -334,6 +413,79 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
           <div className="success-banner">
             <span className="success-icon">✓</span>
             <span>تمت العملية بنجاح - تم إرسال طلب الشراء بنجاح</span>
+          </div>
+        )}
+
+        {/* Payment Modal in orders tab */}
+        {showPaymentModal && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+          }}>
+            <div style={{
+              background: '#fff', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '360px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+            }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '4px' }}>بيانات البطاقة البنكية</div>
+              <div className="text-sm" style={{ marginBottom: '20px', opacity: 0.6 }}>يرجى إدخال بيانات الدفع</div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="form-row">
+                  <div className="form-label">اسم حامل البطاقة</div>
+                  <input className="inp" type="text" placeholder="الاسم الكامل" value={cardName} onChange={(e) => setCardName(e.target.value)} />
+                </div>
+                <div className="form-row">
+                  <div className="form-label">رقم البطاقة</div>
+                  <input className="inp" type="text" placeholder="0000 0000 0000 0000" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} maxLength={19} />
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div className="form-row" style={{ flex: 1 }}>
+                    <div className="form-label">تاريخ الانتهاء</div>
+                    <input className="inp" type="text" placeholder="MM/YY" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} maxLength={5} />
+                  </div>
+                  <div className="form-row" style={{ flex: 1 }}>
+                    <div className="form-label">CVV</div>
+                    <input className="inp" type="text" placeholder="123" value={cardCvv} onChange={(e) => setCardCvv(e.target.value)} maxLength={4} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="btn-row" style={{ marginTop: '20px' }}>
+                <button className="btn-primary" style={{ flex: 1 }} onClick={handleConfirmPayment} disabled={isProcessingPayment || !cardName.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvv.trim()}>
+                  {isProcessingPayment ? 'جارٍ المعالجة...' : 'تأكيد الدفع'}
+                </button>
+                <button className="btn-secondary" onClick={() => setShowPaymentModal(false)} disabled={isProcessingPayment}>
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success Modal in orders tab */}
+        {showSuccessModal && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+          }}>
+            <div style={{
+              background: '#fff', borderRadius: '20px', padding: '32px 24px', width: '100%', maxWidth: '320px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)', textAlign: 'center'
+            }}>
+              <div style={{
+                width: '72px', height: '72px', borderRadius: '50%',
+                background: 'rgba(212,175,55,0.15)', border: '2px solid #D4AF37',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 16px', fontSize: '36px', color: '#D4AF37'
+              }}>
+                ✓
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px' }}>تمت العملية بنجاح</div>
+              <div className="text-sm" style={{ marginBottom: '24px', opacity: 0.7 }}>تم إرسال طلب الشراء</div>
+              <button className="btn-primary" style={{ width: '100%' }} onClick={handleCloseSuccess}>
+                حسناً
+              </button>
+            </div>
           </div>
         )}
         

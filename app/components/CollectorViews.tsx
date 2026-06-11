@@ -249,12 +249,8 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
             <div className="kpi-label">مهام متبقية</div>
           </div>
           <div className="kpi-card">
-            <div className="kpi-metric" style={{ color: 'var(--gold)' }}>{collectorEarnings.toLocaleString()}</div>
-            <div className="kpi-label">أرباح اليوم (د.ج)</div>
-          </div>
-          <div className="kpi-card">
-            <div className="kpi-metric">{pendingTasks}</div>
-            <div className="kpi-label">مهام معلقة</div>
+            <div className="kpi-metric">{completedCount}</div>
+            <div className="kpi-label">مهام منجزة</div>
           </div>
         </div>
 
@@ -271,7 +267,7 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
         {/* Alert Banner */}
         <div className="alert info">
           <Bell size={16} />
-          <span>طلب جديد من جامعة قسنطينة 2 بخصوص عبوات بلاستيكية</span>
+          <span>طلب جديد من حي المنظر الجميل بخصوص عبوات بلاستيكية</span>
         </div>
 
         {/* 5. Main Content - Tasks List */}
@@ -387,7 +383,7 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
             <div className="form-row">
               <div className="form-label">المواد</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
-                {materials.map((m) => (
+                {materials.filter((m) => m.id !== 'ink_cartridge').map((m) => (
                   <label key={m.id} style={{
                     display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px',
                     border: `1.5px solid ${mapCollectMaterials.includes(m.id) ? 'var(--primary-green)' : 'var(--border)'}`,
@@ -473,7 +469,7 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
           <div className="form-row">
             <div className="form-label">أنواع المواد المجمعة</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
-              {materials.map((m) => (
+              {materials.filter((m) => m.id !== 'ink_cartridge').map((m) => (
                 <label
                   key={m.id}
                   style={{
@@ -511,16 +507,16 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
   if (currentTab === 'history') {
     return (
       <>
-        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>سجل العمليات والأرباح</div>
+        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>سجل العمليات</div>
         <div className="card">
           <div className="flex-between">
             <div>
-              <div className="kpi-metric" style={{ fontSize: '22px', color: 'var(--gold)' }}>{collectorEarnings.toLocaleString()} د.ج</div>
-              <div className="kpi-label">إجمالي الأرباح</div>
-            </div>
-            <div style={{ textAlign: 'left' }}>
               <div className="kpi-metric" style={{ fontSize: '22px' }}>{collections.length}</div>
               <div className="kpi-label">عمليات منجزة</div>
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div className="kpi-metric" style={{ fontSize: '22px' }}>{collections.reduce((s, c) => s + c.weight, 0).toLocaleString()}</div>
+              <div className="kpi-label">إجمالي كجم مجموع</div>
             </div>
           </div>
         </div>
@@ -541,7 +537,6 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
                   <div style={{ textAlign: 'left' }}>
                     <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--primary-green)' }}>{r.weight} كجم</div>
                     <div className="text-sm" style={{ marginTop: '2px' }}>{r.materials.map((m) => materials.find((mat) => mat.id === m)?.name ?? m).join('، ')}</div>
-                    <div className="text-sm" style={{ color: 'var(--gold)', fontWeight: 700, marginTop: '2px' }}>+{Math.round(r.weight * 0.5)} د.ج</div>
                   </div>
                 </div>
               </div>

@@ -494,15 +494,15 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
           </Suspense>
         </div>
         <div className="card">
-          <div className="card-title">تتبع الشاحنات</div>
+          <div className="card-title">تتبع الدراجات</div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {trucks.map((truck, i) => (
               <div className="order-row" key={truck.id}>
                 <div className="order-avatar" style={{ background: '#FFFDF6', color: 'var(--gold)' }}>
-                  🚛
+                  🚲
                 </div>
                 <div className="order-info">
-                  <div className="order-title">شاحنة {i + 1}</div>
+                  <div className="order-title">دراجة {i + 1}</div>
                   <div className="order-sub">{truck.name}</div>
                 </div>
                 <span className={`badge ${truck.status === 'loading' ? 'badge-orange' : truck.status === 'en_route' ? 'badge-blue' : 'badge-green'}`}>

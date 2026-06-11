@@ -21,6 +21,15 @@ const roleFilterLabels: Record<string, Role | null> = {
 
 const centerForMap = { name: 'مركز فرز قسنطينة', address: 'قسنطينة وسط', lat: 36.3650, lng: 6.6147 };
 
+const factoryNames: Record<string, string> = {
+  f1: 'شركة نوميديا للبلاستيك المعاد',
+  f2: 'شركة قسنطينة للكرتون الصناعي',
+  f3: 'شركة البطاريات الخضراء',
+  f4: 'مخبر خرطوشة بلس',
+  f5: 'مركز إنك ريسايكل',
+  f6: 'مصنع الأثر الدائم',
+};
+
 export default function AdminViews({ currentTab }: AdminViewsProps) {
   const users = useStore((s) => s.users);
   const orders = useStore((s) => s.orders);
@@ -51,10 +60,14 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
 
   const pendingOrdersCount = orders.filter((o) => o.status === 'pending').length;
 
-  const totalRecycledKG = collections.reduce((sum, c) => sum + c.weight, 0);
-  const co2Saved = Math.round((totalRecycledKG / 1000) * 158);
-  const waterSaved = Math.round((totalRecycledKG / 1000) * 228);
-  const treesProtected = Math.round((totalRecycledKG / 1000) * 1.5);
+  const factoryList = useMemo(() =>
+    ['f1', 'f2', 'f3', 'f4', 'f5', 'f6'].map((id) => ({
+      id,
+      name: factoryNames[id],
+      orders: orders.filter((o) => o.factoryId === id),
+    })),
+    [orders],
+  );
 
   function toggleUserStatus(userId: string, current: 'active' | 'inactive') {
     setIsUpdatingUser((prev) => ({ ...prev, [userId]: true }));
@@ -77,6 +90,7 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
     const collectorCount = users.filter((u) => u.role === 'collector').length;
     const sorterCount = users.filter((u) => u.role === 'sorter').length;
     const factoryCount = users.filter((u) => u.role === 'factory').length;
+    const totalRecycledKG = collections.reduce((sum, c) => sum + c.weight, 0);
 
     return (
       <>
@@ -127,25 +141,23 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
           </button>
         </div>
 
-        {/* 5. Main Content - Environmental Impact Cards in Correct Order */}
+        {/* 5. Main Content - Registered Factories List */}
         <div className="card">
-          <div className="card-title">الأثر البيئي الإجمالي للمنصة</div>
-          <div className="impact-grid">
-            <div className="impact-card">
-              <span className="impact-icon">🌳</span>
-              <span className="impact-val">{treesProtected}</span>
-              <span className="impact-label">أشجار محمية</span>
-            </div>
-            <div className="impact-card">
-              <span className="impact-icon">💧</span>
-              <span className="impact-val">{waterSaved.toLocaleString()} ل</span>
-              <span className="impact-label">مياه موفرة</span>
-            </div>
-            <div className="impact-card">
-              <span className="impact-icon">☁️</span>
-              <span className="impact-val">{co2Saved} كجم</span>
-              <span className="impact-label">انبعاثات CO₂ المخفضة</span>
-            </div>
+          <div className="card-header">
+            <span className="card-title">مصانع التدوير المسجلة</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {factoryList.map((f) => (
+              <div className="order-row" key={f.id}>
+                <div className="order-avatar" style={{ background: 'var(--light-green)', color: 'var(--primary-green)' }}>
+                  <Factory size={18} />
+                </div>
+                <div className="order-info">
+                  <div className="order-title">{f.name}</div>
+                  <div className="order-sub">{f.orders.length} طلبات شراء</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -346,6 +358,26 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
                 <div className="order-info">
                   <div className="order-title">{c.name}</div>
                   <div className="order-sub">{c.address} • التخصص: {c.specialty}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Registered Factories List for Admin */}
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">مصانع التدوير المسجلة</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {factoryList.map((f) => (
+              <div className="order-row" key={f.id}>
+                <div className="order-avatar" style={{ background: 'var(--light-green)', color: 'var(--primary-green)' }}>
+                  <Factory size={18} />
+                </div>
+                <div className="order-info">
+                  <div className="order-title">{f.name}</div>
+                  <div className="order-sub">{f.orders.length} طلبات شراء</div>
                 </div>
               </div>
             ))}

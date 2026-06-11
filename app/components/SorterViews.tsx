@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useStore } from '../lib/store';
 import type { Tab, MaterialType } from '../lib/types';
 import { generateNotifId } from '../lib/data';
@@ -27,6 +27,15 @@ interface SorterViewsProps {
 
 const materialTypeOptions: MaterialType[] = ['plastic', 'carton', 'battery', 'printer_cartridge', 'ink_cartridge'];
 
+const factoryNames: Record<string, string> = {
+  f1: 'شركة نوميديا للبلاستيك المعاد',
+  f2: 'شركة قسنطينة للكرتون الصناعي',
+  f3: 'شركة البطاريات الخضراء',
+  f4: 'مخبر خرطوشة بلس',
+  f5: 'مركز إنك ريسايكل',
+  f6: 'مصنع الأثر الدائم',
+};
+
 export default function SorterViews({ currentTab, onSetTab }: SorterViewsProps) {
   const collections = useStore((s) => s.collections);
   const myInventory = useStore((s) => s.inventory[0]);
@@ -41,6 +50,15 @@ export default function SorterViews({ currentTab, onSetTab }: SorterViewsProps) 
   const updateInventoryCapacity = useStore((s) => s.updateInventoryCapacity);
 
   const collectors = users.filter((u) => u.role === 'collector' && u.status === 'active');
+
+  const factoryList = useMemo(() =>
+    ['f1', 'f2', 'f3', 'f4', 'f5', 'f6'].map((id) => ({
+      id,
+      name: factoryNames[id],
+      orders: orders.filter((o) => o.factoryId === id),
+    })),
+    [orders],
+  );
 
   const [formCollector, setFormCollector] = useState(collectors[0]?.name || '');
   const [formMaterial, setFormMaterial] = useState<MaterialType>('plastic');
@@ -463,6 +481,26 @@ export default function SorterViews({ currentTab, onSetTab }: SorterViewsProps) 
       <>
         <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>تقارير الكميات المفروزة</div>
         <Chart />
+
+        {/* Registered Factories List for Sorter */}
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">مصانع التدوير المسجلة</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {factoryList.map((f) => (
+              <div className="order-row" key={f.id}>
+                <div className="order-avatar" style={{ background: 'var(--light-green)', color: 'var(--primary-green)' }}>
+                  <Factory size={18} />
+                </div>
+                <div className="order-info">
+                  <div className="order-title">{f.name}</div>
+                  <div className="order-sub">{f.orders.length} طلبات شراء</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </>
     );
   }
