@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { ComponentType } from 'react';
-import type { Tab, Role } from '../lib/types';
+import type { Tab } from '../lib/types';
 import { useStore } from '../lib/store';
 import NotifPanel from './NotifPanel';
 import SorterViews from './SorterViews';
@@ -26,6 +26,8 @@ import {
   User,
   Users,
   Settings,
+  Gift,
+  FileText,
 } from 'lucide-react';
 
 interface AppShellProps {
@@ -57,11 +59,13 @@ const navConfig: Record<string, NavItem[]> = {
     { id: 'available', icon: Eye, label: 'المتاح' },
     { id: 'orders', icon: Receipt, label: 'الطلبات' },
     { id: 'shipments', icon: Package, label: 'الشحنات' },
+    { id: 'invoices', icon: FileText, label: 'الفواتير' },
   ],
   partner: [
     { id: 'dashboard', icon: LayoutDashboard, label: 'الرئيسية' },
     { id: 'impact', icon: Leaf, label: 'الأثر' },
-    { id: 'reports', icon: BarChart3, label: 'التقارير' },
+    { id: 'map', icon: Map, label: 'الخريطة' },
+    { id: 'rewards', icon: Gift, label: 'المكافآت' },
     { id: 'profile', icon: User, label: 'الحساب' },
   ],
   admin: [
@@ -78,6 +82,7 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
   const currentRole = useStore((s) => s.session.currentRole);
   const config = useStore((s) => s.config);
   const switchRole = useStore((s) => s.switchRole);
+  const notifications = useStore((s) => s.notifications);
 
   const [notifOpen, setNotifOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
@@ -102,6 +107,7 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
   }, [handleClick]);
 
   const navItems = navConfig[currentRole] || navConfig.sorter;
+  const unreadCount = notifications.filter((n) => n.isNew).length;
 
   function renderViews() {
     switch (currentRole) {
@@ -125,11 +131,14 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
       <div className="app-shell">
         <div className="topbar">
           <div className="topbar-inner">
-            <div className="topbar-logo">♻ CERCLY</div>
+            <div>
+              <div className="topbar-logo">♻ CERCLY</div>
+              <div className="topbar-slogan">اجمع لأثر يدوم</div>
+            </div>
             <div className="topbar-right">
               <button className="notif-btn" onClick={() => setNotifOpen(!notifOpen)}>
                 <Bell size={18} />
-                <span className="notif-dot"></span>
+                {unreadCount > 0 && <span className="notif-dot"></span>}
               </button>
               <div className="role-wrap" ref={roleRef}>
                 <div className="user-chip" onClick={() => setRoleOpen((p) => !p)}>

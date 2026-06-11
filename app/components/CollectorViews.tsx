@@ -21,9 +21,15 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
   const setPointStatus = useStore((s) => s.setPointStatus);
   const materials = useStore((s) => s.materials);
   const schedules = useStore((s) => s.schedules);
+  const users = useStore((s) => s.users);
+
+  const partnerUsers = useMemo(
+    () => users.filter((u) => u.role === 'partner' && u.status === 'active'),
+    [users],
+  );
 
   const pointAttendance = useMemo(() => {
-    const map: Record<string, { status: string; partnerName?: string }> = {};
+    const map: Record<string, { status: string }> = {};
     schedules.forEach((sch) => {
       if (sch.status === 'confirmed' || sch.status === 'pending') {
         map[sch.pointId] = { status: sch.status };
@@ -54,28 +60,40 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
     );
   }
 
+  function getPartnerName(pointId: string) {
+    const point = collectionPoints.find((p) => p.id === pointId);
+    return point?.accountName ?? point?.name ?? '';
+  }
+
   function handleMapCollection() {
-    const weight = parseInt(mapCollectWeight);
+    const weight = parseInt(mapCollectWeight, 10);
     if (!weight || weight <= 0 || !mapCollectPoint) return;
+
+    const now = new Date();
+    const stamp = formatTimestamp(now);
 
     addCollection({
       id: generateCollectionId(),
-      collectorId: 'c1',
+      collectorId: 'u2',
       pointId: mapCollectPoint.id,
       pointName: mapCollectPoint.name,
+      registeredUserName: mapCollectPoint.accountName,
       weight,
       materials: mapCollectMaterials.length > 0 ? mapCollectMaterials : mapCollectPoint.materials as MaterialType[],
-      timestamp: new Date().toISOString(),
-      date: formatTimestamp(new Date()).date,
-      time: formatTimestamp(new Date()).time,
+      timestamp: now.toISOString(),
+      date: stamp.date,
+      time: stamp.time,
+      bottleCount: mapCollectPoint.quantityMode === 'bottles' ? mapCollectPoint.quantityValue : undefined,
     });
 
     setPointStatus({ id: mapCollectPoint.id, status: 'completed' });
 
     addNotification({
       id: `n-map-${Date.now()}`,
-      text: `تم تسجيل جمع ${weight} كجم من ${mapCollectPoint.name}`,
-      time: 'الآن', isNew: true, type: 'info',
+      text: `تم استلام المواد بمركز فرز قسنطينة بعد جمع حساب ${mapCollectPoint.accountName ?? mapCollectPoint.name}`,
+      time: 'الآن',
+      isNew: true,
+      type: 'success',
     });
 
     setMapCollectSubmitted(true);
@@ -93,7 +111,7 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
   }
 
   function handleSubmitCollection() {
-    const weight = parseInt(collWeight);
+    const weight = parseInt(collWeight, 10);
     if (!weight || weight <= 0 || collMaterials.length === 0) return;
 
     const point = collectionPoints.find((p) => p.id === collPoint);
@@ -102,27 +120,29 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
 
     addCollection({
       id: generateCollectionId(),
-      collectorId: 'c1',
+      collectorId: 'u2',
       pointId: collPoint,
       pointName: point?.name ?? '',
+      registeredUserName: point?.accountName,
       weight,
       materials: collMaterials,
       timestamp: now.toISOString(),
       date,
       time,
+      bottleCount: point?.quantityMode === 'bottles' ? point.quantityValue : undefined,
     });
 
     if (point) {
       setPointStatus({ id: point.id, status: 'completed' });
     }
 
-    const matNames = collMaterials.map((m) => materials.find((mat) => mat.id === m)?.name ?? m).join('، ');
+    const partnerName = point?.accountName ?? point?.name ?? '';
     addNotification({
       id: `notif-${Date.now()}`,
-      text: `تم تسجيل جمع ${weight} كجم من ${matNames} في ${point?.name}`,
+      text: `تم قبول طلب ${partnerName} من طرف الجامع أحمد وتحويله إلى مركز فرز قسنطينة`,
       time: 'الآن',
       isNew: true,
-      type: 'info',
+      type: 'success',
     });
 
     setCollSubmitted(true);
@@ -143,32 +163,33 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
 
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>فريق الجمع — قسنطينة</div>
+        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>الجامع — قسنطينة</div>
         <div className="hero-card">
           <div className="hero-title">المجموع المجمع اليوم</div>
           <div className="hero-val">{todayTotal.toLocaleString()} كجم</div>
           <div className="hero-sub">الهدف اليومي: {target} كجم • {pct}% منجز</div>
         </div>
         <div className="stats">
-          <div className="stat-card">          <div className="stat-val">{collections.filter((c) => c.date === 'اليوم').length}</div><div className="stat-label">عمليات جمع</div></div>
-          <div className="stat-card"><div className="stat-val">{upcomingPoints.length}</div><div className="stat-label">نقاط متبقية</div></div>
-          <div className="stat-card"><div className="stat-val">{completedCount}</div><div className="stat-label">نقاط منجزة</div></div>
+          <div className="stat-card"><div className="stat-val">{collections.filter((c) => c.date === 'اليوم').length}</div><div className="stat-label">عمليات جمع</div></div>
+          <div className="stat-card"><div className="stat-val">{upcomingPoints.length}</div><div className="stat-label">حسابات متبقية</div></div>
+          <div className="stat-card"><div className="stat-val">{completedCount}</div><div className="stat-label">حسابات منجزة</div></div>
           <div className="stat-card"><div className="stat-val">{confirmedCount}</div><div className="stat-label">تأكيد حضور</div></div>
         </div>
         <div className="alert info">
-          <Bell size={16} /> تنبيه من شريك جديد — حي بونوارة، موعد الجمع ١٤:٣٠
+          <Bell size={16} /> طلب جديد من جامعة قسنطينة 2 بخصوص عبوات بلاستيكية
         </div>
         <div className="card">
-          <div className="card-header"><span className="card-title">نقاط الجمع اليوم</span></div>
+          <div className="card-header"><span className="card-title">الحسابات المسجلة اليوم</span></div>
           {collectionPoints.map((p) => {
             const att = pointAttendance[p.id];
+            const materialNames = p.materials.map((id) => materials.find((m) => m.id === id)?.name ?? id).join(' + ');
             return (
               <div className="order-row" key={p.id}>
                 <div className="order-avatar" style={p.status === 'upcoming' ? { color: 'var(--orange)' } : {}}>
                   <MapPin size={18} />
                 </div>
                 <div className="order-info">
-                  <div className="order-title">{p.name}</div>
+                  <div className="order-title">{p.accountName}</div>
                   <div className="order-sub" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     {att?.status === 'confirmed' ? (
                       <span style={{ color: 'var(--green-mid)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '3px' }}>
@@ -179,7 +200,7 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
                         <UserX size={12} /> بانتظار التأكيد
                       </span>
                     ) : null}
-                    <span>{p.materials.join(' + ')}</span>
+                    <span>{p.address} • {materialNames}</span>
                   </div>
                 </div>
                 <div className="order-right">
@@ -222,12 +243,17 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
           <div className="card">
             <div className="card-header">
               <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <MapPin size={16} /> {mapCollectPoint.name}
+                <MapPin size={16} /> {mapCollectPoint.accountName}
               </span>
               <button className="btn-sm" style={{ border: 'none', background: 'none', color: 'var(--text-3)', cursor: 'pointer', padding: '4px' }}
                 onClick={() => { setMapCollectPoint(null); setMapCollectMaterials([]); }}>
                 <X size={16} />
               </button>
+            </div>
+            <div className="text-sm" style={{ marginBottom: '10px' }}>
+              {mapCollectPoint.address} • {mapCollectPoint.quantityMode === 'bottles'
+                ? `${mapCollectPoint.quantityValue} قارورة`
+                : `${mapCollectPoint.quantityValue} كجم`}
             </div>
             <div className="form-row">
               <div className="form-label">الوزن (كجم)</div>
@@ -272,7 +298,7 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 500, flexShrink: 0 }}>
                   {p.order}
                 </div>
-                <div className="order-info"><div className="order-title" style={{ fontSize: '13px' }}>{p.name}</div></div>
+                <div className="order-info"><div className="order-title" style={{ fontSize: '13px' }}>{p.accountName}</div></div>
                 <span className={`badge ${badge}`}>{label}</span>
               </div>
             );
@@ -291,15 +317,20 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
         )}
         <div className="card">
           <div className="form-row">
-            <div className="form-label">نقطة الجمع</div>
+            <div className="form-label">الحساب المسجل</div>
             <select className="form-select" value={collPoint} onChange={(e) => setCollPoint(e.target.value)}>
-              {collectionPoints.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
+              {collectionPoints.map((p) => {
+                const matchingUser = partnerUsers.find((user) => user.name === p.accountName);
+                return (
+                  <option key={p.id} value={p.id}>
+                    {(matchingUser?.name ?? p.accountName)} - {p.address}
+                  </option>
+                );
+              })}
             </select>
           </div>
           <div className="form-row">
-            <div className="form-label">وزن الأكياس الكبيرة</div>
+            <div className="form-label">وزن المواد المستلمة</div>
             <input
               className="inp" type="number" placeholder="كجم"
               style={{ margin: 0 }} value={collWeight}
@@ -356,7 +387,7 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
             <div className="card" style={{ marginBottom: '10px' }} key={r.id}>
               <div className="flex-between">
                 <div>
-                  <div style={{ fontSize: '13px', fontWeight: 500 }}>{r.pointName}</div>
+                  <div style={{ fontSize: '13px', fontWeight: 500 }}>{r.registeredUserName ?? r.pointName}</div>
                   <div className="text-sm">{r.date} — {r.time}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>

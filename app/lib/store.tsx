@@ -2,8 +2,23 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AppData, Material, MaterialType, OrderStatus, UserStatus, Notification, CollectionPoint, CollectionPointStatus, CollectionSchedule, AttendanceStatus, InventoryItem, Role } from './types';
-import { seedData } from './data';
+import type {
+  AppData,
+  AttendanceStatus,
+  CollectionPoint,
+  CollectionPointStatus,
+  CollectionSchedule,
+  Invoice,
+  InventoryItem,
+  Material,
+  MaterialType,
+  Notification,
+  OrderStatus,
+  RewardItem,
+  Role,
+  UserStatus,
+} from './types';
+import { generateInvoiceNumber, seedData } from './data';
 
 interface AppStore extends AppData {
   addCollection: (payload: AppData['collections'][number]) => void;
@@ -21,21 +36,19 @@ interface AppStore extends AppData {
   addUser: (payload: AppData['users'][number]) => void;
   updateUserStatus: (payload: { userId: string; status: UserStatus }) => void;
   addNotification: (payload: Notification) => void;
-
+  addInvoice: (payload: Invoice) => void;
+  redeemReward: (payload: RewardItem) => void;
   addMaterial: (payload: Material) => void;
   updateMaterial: (payload: Material) => void;
   deleteMaterial: (id: string) => void;
-
   addCollectionPoint: (payload: CollectionPoint) => void;
   updateCollectionPoint: (payload: CollectionPoint) => void;
   deleteCollectionPoint: (id: string) => void;
   setPointStatus: (payload: { id: string; status: CollectionPointStatus }) => void;
-
   login: (role: Role) => void;
   logout: () => void;
   setTab: (tab: string) => void;
   switchRole: (role: Role) => void;
-
   addSchedule: (payload: CollectionSchedule) => void;
   updateScheduleStatus: (payload: { id: string; status: AttendanceStatus }) => void;
   confirmAttendance: (id: string) => void;
@@ -58,7 +71,12 @@ export const useStore = create<AppStore>()(
                   ...center,
                   items: center.items.map((item) =>
                     item.materialId === materialId
-                      ? { ...item, quantity: item.quantity + quantity, lastReceived: quantity }
+                      ? {
+                          ...item,
+                          quantity: item.quantity + quantity,
+                          lastReceived: quantity,
+                          lastReceivedLabel: `تم استلام ${quantity} ${item.materialId === 'printer_cartridge' || item.materialId === 'ink_cartridge' ? 'قطعة' : 'كجم'}`,
+                        }
                       : item,
                   ),
                 }
@@ -115,12 +133,36 @@ export const useStore = create<AppStore>()(
         })),
 
       addOrder: (payload) =>
-        set((s) => ({ orders: [...s.orders, payload] })),
+        set((s) => ({
+          orders: [...s.orders, payload],
+          invoices: [
+            ...s.invoices,
+            {
+              id: `invoice-${Date.now()}`,
+              orderId: payload.id,
+              invoiceNumber: generateInvoiceNumber(),
+              date: new Date().toLocaleDateString('fr-FR'),
+              companyName: payload.factoryName,
+              materialName: payload.materialName,
+              quantity: payload.quantity,
+              unitPrice: payload.materialId === 'battery' ? 135 : payload.materialId.includes('cartridge') ? 95 : 48,
+              totalPrice:
+                payload.quantity *
+                (payload.materialId === 'battery' ? 135 : payload.materialId.includes('cartridge') ? 95 : 48),
+              completed: false,
+            },
+          ],
+        })),
 
       updateOrderStatus: ({ orderId, status }) =>
         set((s) => ({
           orders: s.orders.map((o) =>
             o.id === orderId ? { ...o, status } : o,
+          ),
+          invoices: s.invoices.map((invoice) =>
+            invoice.orderId === orderId && status !== 'pending'
+              ? { ...invoice, completed: true }
+              : invoice,
           ),
         })),
 
@@ -158,6 +200,32 @@ export const useStore = create<AppStore>()(
         set((s) => ({
           notifications: [payload, ...s.notifications],
         })),
+
+      addInvoice: (payload) =>
+        set((s) => ({
+          invoices: [...s.invoices, payload],
+        })),
+
+      redeemReward: (payload) =>
+        set((s) => {
+          if (s.partnerProfile.points < payload.pointsCost) return s;
+          return {
+            partnerProfile: {
+              ...s.partnerProfile,
+              points: s.partnerProfile.points - payload.pointsCost,
+            },
+            notifications: [
+              {
+                id: `reward-${Date.now()}`,
+                text: `تم تأكيد استبدال ${payload.name} من ${payload.storeName}`,
+                time: 'الآن',
+                isNew: true,
+                type: 'success',
+              },
+              ...s.notifications,
+            ],
+          };
+        }),
 
       addMaterial: (payload) =>
         set((s) => ({ materials: [...s.materials, payload] })),
@@ -229,7 +297,7 @@ export const useStore = create<AppStore>()(
       confirmAttendance: (id) =>
         set((s) => ({
           schedules: s.schedules.map((sch) =>
-            sch.id === id ? { ...sch, status: 'confirmed' as AttendanceStatus } : sch,
+            sch.id === id ? { ...sch, status: 'confirmed' } : sch,
           ),
         })),
 
@@ -237,11 +305,11 @@ export const useStore = create<AppStore>()(
         set((s) => ({
           schedules: s.schedules.map((sch) =>
             sch.id === id
-              ? { ...sch, status: 'postponed' as AttendanceStatus, scheduledDate: newDate, scheduledTime: newTime }
+              ? { ...sch, status: 'postponed', scheduledDate: newDate, scheduledTime: newTime }
               : sch,
           ),
         })),
     }),
-    { name: 'cercy-storage' },
+    { name: 'cercly-storage' },
   ),
 );

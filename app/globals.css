@@ -2,15 +2,15 @@
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root {
-  --green-50: #e8f5e0;
-  --green-100: #c5e8a0;
-  --green-200: #9ed86a;
-  --green-500: #3a7d1e;
-  --green-600: #2d6318;
+  --green-50: #ebf7e5;
+  --green-100: #d3efb8;
+  --green-200: #b6e38a;
+  --green-500: #46972a;
+  --green-600: #387b20;
   --green-700: #1e4510;
   --green-dark: #1a3a0d;
-  --green-mid: #2d6318;
-  --green-light: #4a9428;
+  --green-mid: #3f8c25;
+  --green-light: #5cad38;
   --orange: #e07b2a;
   --orange-light: #f5a855;
   --orange-bg: #fff3e0;
@@ -114,6 +114,7 @@ body {
 }
 .topbar-inner{max-width:680px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;width:100%}
 .topbar-logo{font-size:18px;font-weight:600;letter-spacing:1px}
+.topbar-slogan{font-size:11px;color:rgba(255,255,255,0.74);margin-top:2px}
 .topbar-right{display:flex;align-items:center;gap:10px}
 .notif-btn {
   background:rgba(255,255,255,0.1);border:none;border-radius:var(--radius-sm);
@@ -318,6 +319,7 @@ body {
 .notif-item:last-child{border-bottom:none}
 .notif-dot-s{width:8px;height:8px;border-radius:50%;background:var(--green-mid);margin-top:5px;flex-shrink:0}
 .notif-dot-s.orange{background:var(--orange)}
+.notif-dot-s.green{background:var(--green-mid)}
 .notif-text{font-size:12px;color:var(--text-2);line-height:1.5}
 .notif-time{font-size:10px;color:var(--text-3);margin-top:3px}
 

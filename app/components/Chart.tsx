@@ -54,7 +54,7 @@ export default function Chart() {
     <>
       <div className="card">
         <div className="card-header">
-          <span className="card-title">إجمالي الكميات المعالجة (طن)</span>
+          <span className="card-title">إجمالي المواد المفروزة (طن)</span>
           <span className="text-sm">آخر ٦ أشهر</span>
         </div>
         {vals.length > 0 ? (

@@ -10,9 +10,9 @@ interface LoginScreenProps {
 }
 
 const roleEntries: { id: Role; icon: React.ReactNode; label: string }[] = [
-  { id: 'collector', icon: <Truck size={24} />, label: 'فرق الجمع' },
-  { id: 'sorter', icon: <Filter size={24} />, label: 'مراكز الفرز' },
-  { id: 'factory', icon: <Factory size={24} />, label: 'المصانع' },
+  { id: 'collector', icon: <Truck size={24} />, label: 'الجامع' },
+  { id: 'sorter', icon: <Filter size={24} />, label: 'مركز الفرز' },
+  { id: 'factory', icon: <Factory size={24} />, label: 'شركات التدوير' },
   { id: 'partner', icon: <Users size={24} />, label: 'الشركاء' },
 ];
 
@@ -24,7 +24,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
     <div className="screen active" id="screen-login">
       <div className="login-wrap">
         <div className="login-logo">♻ CERCLY</div>
-        <div className="login-sub">منصة إدارة جمع وإعادة تدوير النفايات</div>
+        <div className="login-sub">اجمع لأثر يدوم</div>
         <div className="login-card">
           <h2>مرحباً بك</h2>
           <p>اختر نوع حسابك لتسجيل الدخول</p>
@@ -40,7 +40,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
               </div>
             ))}
           </div>
-          <input className="inp" placeholder="البريد الإلكتروني" type="email" defaultValue="ahmed@cercy.dz" />
+          <input className="inp" placeholder="البريد الإلكتروني" type="email" defaultValue="ahmed@cercly.dz" />
           <input className="inp" placeholder="كلمة المرور" type="password" defaultValue="••••••••" />
           <button className="btn-primary" onClick={() => onLogin(selectedRole)}>
             تسجيل الدخول ←

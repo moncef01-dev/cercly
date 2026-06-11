@@ -1,7 +1,12 @@
 export type Role = 'sorter' | 'collector' | 'factory' | 'partner' | 'admin';
 export type Tab = string;
 
-export type MaterialType = 'plastic' | 'paper' | 'metal' | 'glass' | 'mixed';
+export type MaterialType =
+  | 'plastic'
+  | 'carton'
+  | 'battery'
+  | 'printer_cartridge'
+  | 'ink_cartridge';
 export type OrderStatus = 'pending' | 'confirmed' | 'delivered';
 export type CollectionPointStatus = 'completed' | 'upcoming' | 'pending';
 export type ShipmentStatus = 'in_transit' | 'scheduled';
@@ -27,6 +32,9 @@ export interface CollectionPoint {
   status: CollectionPointStatus;
   schedule?: string;
   order: number;
+  accountName?: string;
+  quantityMode?: 'kg' | 'bottles';
+  quantityValue?: number;
 }
 
 export interface CollectionRecord {
@@ -40,6 +48,8 @@ export interface CollectionRecord {
   timestamp: string;
   date: string;
   time: string;
+  registeredUserName?: string;
+  bottleCount?: number;
 }
 
 export interface InventoryItem {
@@ -96,7 +106,7 @@ export interface Notification {
   text: string;
   time: string;
   isNew: boolean;
-  type: 'info' | 'warning';
+  type: 'info' | 'warning' | 'success';
 }
 
 export interface CollectionSchedule {
@@ -109,6 +119,8 @@ export interface CollectionSchedule {
   scheduledTime: string;
   status: AttendanceStatus;
   notes?: string;
+  quantityMode?: 'kg' | 'bottles';
+  quantityValue?: number;
 }
 
 export interface PartnerProfile {
@@ -120,7 +132,47 @@ export interface PartnerProfile {
   points: number;
   totalRecycled: number;
   co2Saved: number;
+  waterSaved: number;
+  treesProtected: number;
   operations: number;
+}
+
+export interface RecyclingCompany {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  specialty: string;
+}
+
+export interface TruckLocation {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  status: 'loading' | 'en_route' | 'delivered';
+}
+
+export interface RewardItem {
+  id: string;
+  name: string;
+  pointsCost: number;
+  storeName: string;
+  category: string;
+}
+
+export interface Invoice {
+  id: string;
+  orderId: string;
+  invoiceNumber: string;
+  date: string;
+  companyName: string;
+  materialName: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  completed: boolean;
 }
 
 export interface AppConfig {
@@ -145,35 +197,10 @@ export interface AppData {
   partnerProfile: PartnerProfile;
   users: PlatformUser[];
   schedules: CollectionSchedule[];
+  recyclingCompanies: RecyclingCompany[];
+  trucks: TruckLocation[];
+  rewards: RewardItem[];
+  invoices: Invoice[];
   config: AppConfig;
   session: AppSession;
 }
-
-export type AppAction =
-  | { type: 'ADD_COLLECTION'; payload: CollectionRecord }
-  | { type: 'UPDATE_INVENTORY'; payload: { centerId: string; materialId: MaterialType; quantity: number } }
-  | { type: 'ADD_INVENTORY_ITEM'; payload: { centerId: string; item: InventoryItem } }
-  | { type: 'REMOVE_INVENTORY_ITEM'; payload: { centerId: string; materialId: MaterialType } }
-  | { type: 'UPDATE_INVENTORY_CAPACITY'; payload: { centerId: string; materialId: MaterialType; capacity: number } }
-  | { type: 'ADD_ORDER'; payload: PurchaseOrder }
-  | { type: 'UPDATE_ORDER_STATUS'; payload: { orderId: string; status: OrderStatus } }
-  | { type: 'ADD_SHIPMENT'; payload: Shipment }
-  | { type: 'MARK_NOTIFICATION_READ'; payload: string }
-  | { type: 'MARK_ALL_NOTIFICATIONS_READ' }
-  | { type: 'UPDATE_PARTNER_PROFILE'; payload: Partial<PartnerProfile> }
-  | { type: 'ADD_USER'; payload: PlatformUser }
-  | { type: 'UPDATE_USER_STATUS'; payload: { userId: string; status: UserStatus } }
-  | { type: 'ADD_NOTIFICATION'; payload: Notification }
-  | { type: 'ADD_MATERIAL'; payload: Material }
-  | { type: 'UPDATE_MATERIAL'; payload: Material }
-  | { type: 'DELETE_MATERIAL'; payload: string }
-  | { type: 'ADD_COLLECTION_POINT'; payload: CollectionPoint }
-  | { type: 'UPDATE_COLLECTION_POINT'; payload: CollectionPoint }
-  | { type: 'DELETE_COLLECTION_POINT'; payload: string }
-  | { type: 'SET_POINT_STATUS'; payload: { id: string; status: CollectionPointStatus } }
-  | { type: 'SET_SESSION'; payload: AppSession }
-  | { type: 'UPDATE_CONFIG'; payload: Partial<AppConfig> }
-  | { type: 'ADD_SCHEDULE'; payload: CollectionSchedule }
-  | { type: 'UPDATE_SCHEDULE_STATUS'; payload: { id: string; status: AttendanceStatus } }
-  | { type: 'CONFIRM_ATTENDANCE'; payload: string }
-  | { type: 'POSTPONE_ATTENDANCE'; payload: { id: string; newDate: string; newTime: string } };

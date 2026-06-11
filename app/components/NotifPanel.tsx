@@ -38,7 +38,11 @@ export default function NotifPanel({ isOpen }: NotifPanelProps) {
           onClick={() => markRead(n.id)}
           style={{ cursor: 'pointer' }}
         >
-          <div className={`notif-dot-s${n.type === 'warning' ? ' orange' : ''}`}></div>
+          <div
+            className={`notif-dot-s${
+              n.type === 'warning' ? ' orange' : n.type === 'success' ? ' green' : ''
+            }`}
+          ></div>
           <div>
             <div className="notif-text">{n.text}</div>
             <div className="notif-time">{n.time}</div>
