@@ -25,13 +25,6 @@ export const seedMaterials: Material[] = [
     color: "#8b5cf6",
     unit: "قطعة",
   },
-  {
-    id: "ink_cartridge",
-    name: "خرطوشة حبر",
-    icon: "🧪",
-    color: "#0f766e",
-    unit: "قطعة",
-  },
 ];
 
 export const seedCollectionPoints: CollectionPoint[] = [
@@ -154,7 +147,7 @@ export const seedRecyclingCompanies: RecyclingCompany[] = [
     address: "علي منجلي",
     lat: 36.2508,
     lng: 6.575,
-    specialty: "خراطيش حبر",
+    specialty: "خراطيش ",
   },
   {
     id: "rc6",
@@ -361,7 +354,7 @@ const seedGreenStores: GreenPartnerStore[] = [
     id: "gs1",
     name: "مكتبة النجاح الخضراء",
     address: "علي منجلي",
-    description: "مكتبة ومتجر مستلزمات مدرسية صديقة للبيئة",
+    description: "مكتبة ومتجر مستلزمات ",
     offers: ["قسائم شرائية", "خصم 15% لأعضاء CERCLY"],
   },
   {
@@ -375,7 +368,7 @@ const seedGreenStores: GreenPartnerStore[] = [
     id: "gs3",
     name: "Eco Store",
     address: "سيدي مبروك",
-    description: "متجر منتجات صديقة للبيئة ومستدامة",
+    description: "متجر منتجات   ",
     offers: ["هدايا ترويجية", "نقاط مضاعفة"],
   },
   {
@@ -579,7 +572,7 @@ export const seedData: AppData = {
           quantity: 110,
           capacity: 400,
           lastReceived: 22,
-          lastReceivedLabel: "تم استلام خراطيش الحبر من سيدي مبروك",
+          lastReceivedLabel: "تم استلام خراطيش من سيدي مبروك",
         },
       ],
     },
