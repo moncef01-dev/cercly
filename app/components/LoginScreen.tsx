@@ -52,9 +52,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           <div className="login-logo">♻</div>
           <div className="login-name">CERCLY</div>
           <div className="login-slogan">اجمع لأثر يدوم</div>
-          <div className="login-desc">
-            منصة ذكية لجمع وفرز وإعادة تدوير المواد القابلة للتدوير
-          </div>
+
         </div>
 
         <div className="login-card">
@@ -99,9 +97,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           </button>
         </div>
 
-        <div className="login-info">
-          نسخة تجريبية لأغراض العرض والمناقشة الأكاديمية
-        </div>
+
 
         <div className="login-footer">
           <div className="login-footer-text">♻ إعادة التدوير تبدأ بخطوة صغيرة</div>
