@@ -1,54 +1,111 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { Role } from '../lib/types';
-import { useStore } from '../lib/store';
-import { Truck, Filter, Factory, Users } from 'lucide-react';
 
 interface LoginScreenProps {
   onLogin: (role: Role) => void;
 }
 
-const roleEntries: { id: Role; icon: React.ReactNode; label: string }[] = [
-  { id: 'collector', icon: <Truck size={24} />, label: 'الجامع' },
-  { id: 'sorter', icon: <Filter size={24} />, label: 'مركز الفرز' },
-  { id: 'factory', icon: <Factory size={24} />, label: 'شركات التدوير' },
-  { id: 'partner', icon: <Users size={24} />, label: 'الشركاء' },
+const roleOptions: { id: Role; label: string }[] = [
+  { id: 'partner', label: 'فرد / مؤسسة' },
+  { id: 'collector', label: 'جامع' },
+  { id: 'sorter', label: 'مركز الفرز' },
+  { id: 'factory', label: 'مصنع التدوير' },
+  { id: 'admin', label: 'الإدارة' },
 ];
 
+const roleEmailMap: Record<Role, string> = {
+  partner: 'provider@cercly.dz',
+  collector: 'collector@cercly.dz',
+  sorter: 'sorting@cercly.dz',
+  factory: 'recycling@cercly.dz',
+  admin: 'admin@cercly.dz',
+};
+
 export default function LoginScreen({ onLogin }: LoginScreenProps) {
-  const config = useStore((s) => s.config);
-  const [selectedRole, setSelectedRole] = useState<Role>('sorter');
+  const [selectedRole, setSelectedRole] = useState<Role>('partner');
+  const [email, setEmail] = useState(roleEmailMap[selectedRole]);
+  const [password, setPassword] = useState('123456');
+
+  const selectRole = useCallback((role: Role) => {
+    setSelectedRole(role);
+    setEmail(roleEmailMap[role]);
+    setPassword('123456');
+  }, []);
+
+  const handleLogin = useCallback(() => {
+    onLogin(selectedRole);
+  }, [onLogin, selectedRole]);
 
   return (
     <div className="screen active" id="screen-login">
       <div className="login-wrap">
-        <div className="login-logo">♻ CERCLY</div>
-        <div className="login-sub">اجمع لأثر يدوم</div>
+        <div className="login-bg-deco">
+          <span style={{ top: '10%', left: '5%' }}>♻</span>
+          <span style={{ top: '40%', right: '8%', fontSize: '60px' }}>♻</span>
+          <span style={{ bottom: '20%', left: '15%', fontSize: '50px' }}>♻</span>
+          <span style={{ top: '60%', right: '5%' }}>♻</span>
+        </div>
+
+        <div className="login-header">
+          <div className="login-logo">♻</div>
+          <div className="login-name">CERCLY</div>
+          <div className="login-slogan">اجمع لأثر يدوم</div>
+          <div className="login-desc">
+            منصة ذكية لجمع وفرز وإعادة تدوير المواد القابلة للتدوير
+          </div>
+        </div>
+
         <div className="login-card">
-          <h2>مرحباً بك</h2>
-          <p>اختر نوع حسابك لتسجيل الدخول</p>
-          <div className="role-grid">
-            {roleEntries.map((r) => (
-              <div
+          <div className="login-card-title">تسجيل الدخول</div>
+
+          <div className="login-field">
+            <label>البريد الإلكتروني</label>
+            <input
+              className="login-inp"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+            />
+          </div>
+
+          <div className="login-field">
+            <label>كلمة المرور</label>
+            <input
+              className="login-inp"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </div>
+
+          <div className="login-role-selector">
+            {roleOptions.map((r) => (
+              <button
                 key={r.id}
-                className={`role-btn${selectedRole === r.id ? ' sel' : ''}`}
-                onClick={() => setSelectedRole(r.id)}
+                className={`login-role-pill${selectedRole === r.id ? ' active' : ''}`}
+                onClick={() => selectRole(r.id)}
               >
-                {r.icon}
-                <span>{config.roleNames[r.id]}</span>
-              </div>
+                {r.label}
+              </button>
             ))}
           </div>
-          <input className="inp" placeholder="البريد الإلكتروني" type="email" defaultValue="ahmed@cercly.dz" />
-          <input className="inp" placeholder="كلمة المرور" type="password" defaultValue="••••••••" />
-          <button className="btn-primary" onClick={() => onLogin(selectedRole)}>
-            تسجيل الدخول ←
+
+          <button className="login-btn" onClick={handleLogin}>
+            تسجيل الدخول
           </button>
-          <div className="text-center mt-3" style={{ textAlign: 'center', marginTop: '12px', fontSize: '12px', color: 'var(--text-3)' }}>
-            ليس لديك حساب؟
-            <span style={{ color: 'var(--green-mid)', cursor: 'pointer' }}>إنشاء حساب جديد</span>
-          </div>
+        </div>
+
+        <div className="login-info">
+          نسخة تجريبية لأغراض العرض والمناقشة الأكاديمية
+        </div>
+
+        <div className="login-footer">
+          <div className="login-footer-text">♻ إعادة التدوير تبدأ بخطوة صغيرة</div>
+          <div className="login-footer-copy">CERCLY © 2026</div>
         </div>
       </div>
     </div>

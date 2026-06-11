@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useStore } from '../lib/store';
 import type { Tab, MaterialType } from '../lib/types';
+import { generateNotifId } from '../lib/data';
 import Chart from './Chart';
 import {
   AlertTriangle,
@@ -14,6 +15,8 @@ import {
   CheckCircle,
   Trash2,
   Settings,
+  Truck,
+  BarChart3,
 } from 'lucide-react';
 
 interface SorterViewsProps {
@@ -58,11 +61,14 @@ export default function SorterViews({ currentTab, onSetTab }: SorterViewsProps) 
 
     updateInventory({ centerId: myInventory.centerId, materialId: formMaterial, quantity: weight });
     addNotification({
-      id: `notif-sorter-${Date.now()}`,
+      id: generateNotifId(),
+      icon: '📦',
+      title: 'شحنة واردة',
       text: `تم استلام ${weight} ${mat?.unit ?? 'كجم'} من ${matName} بمركز فرز قسنطينة من ${formCollector}`,
       time: 'الآن',
       isNew: true,
       type: 'info',
+      role: 'sorter',
     });
 
     setFormWeight('');
@@ -72,11 +78,14 @@ export default function SorterViews({ currentTab, onSetTab }: SorterViewsProps) 
   function handleApproveOrder(orderId: string, factoryName: string, materialName: string) {
     updateOrderStatus({ orderId, status: 'confirmed' });
     addNotification({
-      id: `notif-order-${Date.now()}`,
+      id: generateNotifId(),
+      icon: '✅',
+      title: 'تم الاعتماد',
       text: `تم اعتماد طلب شراء ${materialName} لصالح ${factoryName}`,
       time: 'الآن',
       isNew: true,
       type: 'success',
+      role: 'sorter',
     });
   }
 
@@ -119,26 +128,29 @@ export default function SorterViews({ currentTab, onSetTab }: SorterViewsProps) 
       .filter((c) => c.date === 'اليوم')
       .reduce((sum, c) => sum + c.weight, 0);
     const totalSorted = Math.round(totalReceived * 0.86);
+    const incomingDeliveries = collections.filter((c) => c.date === 'اليوم').length;
 
     return (
       <>
         <div className="flex-between" style={{ marginBottom: '12px' }}>
           <div>
-            <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text)' }}>{myInventory.centerName}</div>
+            <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text)' }}>
+              ♻ {myInventory.centerName}
+            </div>
             <div className="live-badge"><span className="live-dot"></span>مباشر — تحديث فوري</div>
           </div>
           <div className="tag">{myInventory.location}</div>
         </div>
         {orders.filter((o) => o.status === 'pending').length > 0 && (
           <div className="alert warning">
-            <AlertTriangle size={16} /> توجد طلبات شراء بانتظار الاعتماد من مركز فرز قسنطينة
+            <AlertTriangle size={16} /> توجد طلبات شراء بانتظار الاعتماد
           </div>
         )}
         <div className="stats">
           <div className="stat-card">
-            <div className="stat-val">{(totalReceived / 1000).toFixed(1)} طن</div>
-            <div className="stat-label">مستلم اليوم</div>
-            <div className="stat-change">↑ 12% من أمس</div>
+            <div className="stat-val">{incomingDeliveries}</div>
+            <div className="stat-label">الواردات اليوم</div>
+            <div className="stat-change">↑ {Math.round(totalReceived / 1000 * 10) / 10} طن مستلمة</div>
           </div>
           <div className="stat-card">
             <div className="stat-val">{(totalSorted / 1000).toFixed(1)} طن</div>
@@ -202,7 +214,7 @@ export default function SorterViews({ currentTab, onSetTab }: SorterViewsProps) 
                     <CheckCircle size={14} /> اعتماد
                   </button>
                 ) : (
-                  <span className="badge badge-green">معتمد</span>
+                  <span className="badge badge-green">✅ معتمد</span>
                 )}
                 <div className="order-date">{o.createdAt}</div>
               </div>
@@ -216,11 +228,14 @@ export default function SorterViews({ currentTab, onSetTab }: SorterViewsProps) 
   if (currentTab === 'quantities') {
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>تسجيل استلام جديد</div>
+        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>
+          <Truck size={18} style={{ verticalAlign: 'middle', marginLeft: '8px' }} />
+          تسجيل استلام جديد
+        </div>
         <div className="card">
           <div className="card-title" style={{ marginBottom: '14px' }}>بيانات الاستلام</div>
           <div className="form-row">
-            <div className="form-label">الجامع</div>
+            <div className="form-label">جامع</div>
             <select className="form-select" value={formCollector} onChange={(e) => setFormCollector(e.target.value)}>
               {collectors.length === 0 && <option>لا يوجد جامعون</option>}
               {collectors.map((c) => (
@@ -326,7 +341,7 @@ export default function SorterViews({ currentTab, onSetTab }: SorterViewsProps) 
 
               <div className="flex-between" style={{ marginBottom: '8px' }}>
                 <span style={{ fontSize: '22px', fontWeight: 500, color: mat?.color }}>
-                  {item.quantity.toLocaleString()} {mat?.unit ?? 'كجم'}
+                  {item.quantity.toLocaleString()} كجم
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <input
@@ -399,7 +414,15 @@ export default function SorterViews({ currentTab, onSetTab }: SorterViewsProps) 
   }
 
   if (currentTab === 'reports') {
-    return <Chart />;
+    return (
+      <>
+        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>
+          <BarChart3 size={18} style={{ verticalAlign: 'middle', marginLeft: '8px' }} />
+          تقارير المواد المفروزة
+        </div>
+        <Chart />
+      </>
+    );
   }
 
   return null;

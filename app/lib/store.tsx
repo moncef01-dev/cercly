@@ -14,6 +14,7 @@ import type {
   MaterialType,
   Notification,
   OrderStatus,
+  PointsHistory,
   RewardItem,
   Role,
   UserStatus,
@@ -38,6 +39,8 @@ interface AppStore extends AppData {
   addNotification: (payload: Notification) => void;
   addInvoice: (payload: Invoice) => void;
   redeemReward: (payload: RewardItem) => void;
+  addPointsHistory: (payload: PointsHistory) => void;
+  addCollectorEarnings: (amount: number) => void;
   addMaterial: (payload: Material) => void;
   updateMaterial: (payload: Material) => void;
   deleteMaterial: (id: string) => void;
@@ -214,18 +217,37 @@ export const useStore = create<AppStore>()(
               ...s.partnerProfile,
               points: s.partnerProfile.points - payload.pointsCost,
             },
+            pointsHistory: [
+              {
+                id: `ph-redeem-${Date.now()}`,
+                points: payload.pointsCost,
+                reason: `استبدال ${payload.name} من ${payload.storeName}`,
+                date: new Date().toLocaleDateString('fr-FR'),
+                type: 'redeemed',
+              },
+              ...s.pointsHistory,
+            ],
             notifications: [
               {
                 id: `reward-${Date.now()}`,
+                icon: '🎁',
+                title: 'تم الاستبدال',
                 text: `تم تأكيد استبدال ${payload.name} من ${payload.storeName}`,
                 time: 'الآن',
                 isNew: true,
                 type: 'success',
+                role: s.session.currentRole,
               },
               ...s.notifications,
             ],
           };
         }),
+
+      addPointsHistory: (payload) =>
+        set((s) => ({ pointsHistory: [payload, ...s.pointsHistory] })),
+
+      addCollectorEarnings: (amount) =>
+        set((s) => ({ collectorEarnings: s.collectorEarnings + amount })),
 
       addMaterial: (payload) =>
         set((s) => ({ materials: [...s.materials, payload] })),
@@ -310,6 +332,12 @@ export const useStore = create<AppStore>()(
           ),
         })),
     }),
-    { name: 'cercly-storage' },
+    {
+      name: 'cercly-storage-v2',
+      partialize: (state) => {
+        const { config: _, notifications: __, ...rest } = state;
+        return rest;
+      },
+    },
   ),
 );

@@ -101,12 +101,17 @@ export interface PlatformUser {
   joinDate: string;
 }
 
+export type NotifCategory = 'success' | 'info' | 'warning' | 'system' | 'reward' | 'transaction' | 'environment';
+
 export interface Notification {
   id: string;
+  icon: string;
+  title: string;
   text: string;
   time: string;
   isNew: boolean;
-  type: 'info' | 'warning' | 'success';
+  type: NotifCategory;
+  role: Role;
 }
 
 export interface CollectionSchedule {
@@ -162,6 +167,22 @@ export interface RewardItem {
   category: string;
 }
 
+export interface PointsHistory {
+  id: string;
+  points: number;
+  reason: string;
+  date: string;
+  type: 'earned' | 'redeemed';
+}
+
+export interface GreenPartnerStore {
+  id: string;
+  name: string;
+  address: string;
+  description: string;
+  offers: string[];
+}
+
 export interface Invoice {
   id: string;
   orderId: string;
@@ -203,4 +224,7 @@ export interface AppData {
   invoices: Invoice[];
   config: AppConfig;
   session: AppSession;
+  pointsHistory: PointsHistory[];
+  greenPartnerStores: GreenPartnerStore[];
+  collectorEarnings: number;
 }

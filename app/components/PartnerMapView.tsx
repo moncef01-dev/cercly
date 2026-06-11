@@ -70,7 +70,7 @@ export default function PartnerMapView({ companies, trucks, center }: PartnerMap
         color: 'var(--text-3)',
         fontSize: '13px',
       }}>
-        جاري تحميل خريطة الشركاء...
+        جاري تحميل خريطة المواقع...
       </div>
     );
   }

@@ -4,7 +4,7 @@ import { useState, lazy, Suspense, useMemo } from 'react';
 import { useStore } from '../lib/store';
 import type { Tab, MaterialType } from '../lib/types';
 import { generateCollectionId, formatTimestamp } from '../lib/data';
-import { MapPin, Check, Camera, Map, Bell, UserCheck, UserX, X } from 'lucide-react';
+import { MapPin, Check, Camera, Map, Bell, UserCheck, UserX, X, Wallet, TrendingUp, Clock, User } from 'lucide-react';
 
 const MapView = lazy(() => import('./MapView'));
 
@@ -17,16 +17,14 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
   const collections = useStore((s) => s.collections);
   const addCollection = useStore((s) => s.addCollection);
   const addNotification = useStore((s) => s.addNotification);
+  const addPointsHistory = useStore((s) => s.addPointsHistory);
   const collectionPoints = useStore((s) => s.collectionPoints);
   const setPointStatus = useStore((s) => s.setPointStatus);
   const materials = useStore((s) => s.materials);
   const schedules = useStore((s) => s.schedules);
   const users = useStore((s) => s.users);
-
-  const partnerUsers = useMemo(
-    () => users.filter((u) => u.role === 'partner' && u.status === 'active'),
-    [users],
-  );
+  const addCollectorEarnings = useStore((s) => s.addCollectorEarnings);
+  const collectorEarnings = useStore((s) => s.collectorEarnings);
 
   const pointAttendance = useMemo(() => {
     const map: Record<string, { status: string }> = {};
@@ -48,6 +46,25 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
   const [mapCollectMaterials, setMapCollectMaterials] = useState<MaterialType[]>([]);
   const [mapCollectSubmitted, setMapCollectSubmitted] = useState(false);
 
+  function calcPoints(materialId: MaterialType, weight: number, bottles: number): number {
+    let points = 0;
+    const w = weight || 0;
+    const b = bottles || 0;
+    if (materialId === 'plastic') {
+      if (b > 0) { if (b >= 10) points = 150; else if (b >= 5) points = 60; else points = 10 * b; }
+      else { if (w >= 10) points = 150; else if (w >= 5) points = 60; else points = 10 * w; }
+    } else if (materialId === 'carton') {
+      if (w >= 10) points = 90; else if (w >= 5) points = 35; else points = 5 * w;
+    } else if (materialId === 'battery') {
+      const count = b > 0 ? b : w;
+      if (count >= 10) points = 300; else if (count >= 5) points = 120; else points = 20 * count;
+    } else if (materialId === 'printer_cartridge' || materialId === 'ink_cartridge') {
+      const count = b > 0 ? b : w;
+      if (count >= 10) points = 700; else if (count >= 5) points = 300; else points = 50 * count;
+    }
+    return points;
+  }
+
   function toggleMaterial(mat: MaterialType) {
     setCollMaterials((prev) =>
       prev.includes(mat) ? prev.filter((m) => m !== mat) : [...prev, mat],
@@ -60,17 +77,13 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
     );
   }
 
-  function getPartnerName(pointId: string) {
-    const point = collectionPoints.find((p) => p.id === pointId);
-    return point?.accountName ?? point?.name ?? '';
-  }
-
   function handleMapCollection() {
     const weight = parseInt(mapCollectWeight, 10);
     if (!weight || weight <= 0 || !mapCollectPoint) return;
 
     const now = new Date();
     const stamp = formatTimestamp(now);
+    const totalPoints = mapCollectMaterials.reduce((sum, mat) => sum + calcPoints(mat, weight / Math.max(mapCollectMaterials.length, 1), 0), 0);
 
     addCollection({
       id: generateCollectionId(),
@@ -87,13 +100,28 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
     });
 
     setPointStatus({ id: mapCollectPoint.id, status: 'completed' });
+    addCollectorEarnings(Math.round(weight * 0.5));
+
+    const partnerUser = users.find((u) => u.name === mapCollectPoint.accountName);
+    if (partnerUser && totalPoints > 0) {
+      addPointsHistory({
+        id: `ph-${Date.now()}`,
+        points: totalPoints,
+        reason: `جمع مواد من ${mapCollectPoint.accountName}`,
+        date: stamp.date,
+        type: 'earned',
+      });
+    }
 
     addNotification({
       id: `n-map-${Date.now()}`,
+      icon: '♻',
+      title: 'تم الاستلام',
       text: `تم استلام المواد بمركز فرز قسنطينة بعد جمع حساب ${mapCollectPoint.accountName ?? mapCollectPoint.name}`,
       time: 'الآن',
       isNew: true,
       type: 'success',
+      role: 'collector',
     });
 
     setMapCollectSubmitted(true);
@@ -117,6 +145,7 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
     const point = collectionPoints.find((p) => p.id === collPoint);
     const now = new Date();
     const { date, time } = formatTimestamp(now);
+    const totalPoints = collMaterials.reduce((sum, mat) => sum + calcPoints(mat, weight / Math.max(collMaterials.length, 1), 0), 0);
 
     addCollection({
       id: generateCollectionId(),
@@ -135,14 +164,29 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
     if (point) {
       setPointStatus({ id: point.id, status: 'completed' });
     }
+    addCollectorEarnings(Math.round(weight * 0.5));
+
+    const partnerUser = users.find((u) => u.name === point?.accountName);
+    if (partnerUser && totalPoints > 0) {
+      addPointsHistory({
+        id: `ph-col-${Date.now()}`,
+        points: totalPoints,
+        reason: `جمع مواد من ${point?.accountName}`,
+        date,
+        type: 'earned',
+      });
+    }
 
     const partnerName = point?.accountName ?? point?.name ?? '';
     addNotification({
       id: `notif-${Date.now()}`,
-      text: `تم قبول طلب ${partnerName} من طرف الجامع أحمد وتحويله إلى مركز فرز قسنطينة`,
+      icon: '✅',
+      title: 'طلب مقبول',
+      text: `تم قبول طلب ${partnerName} من طرف جامع أحمد في قسنطينة وسط`,
       time: 'الآن',
       isNew: true,
       type: 'success',
+      role: 'collector',
     });
 
     setCollSubmitted(true);
@@ -160,10 +204,20 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
     const upcomingPoints = collectionPoints.filter((p) => p.status === 'upcoming');
     const completedCount = collectionPoints.filter((p) => p.status === 'completed').length;
     const confirmedCount = Object.values(pointAttendance).filter((a) => a.status === 'confirmed').length;
+    const pendingTasks = schedules.filter((s) => s.status === 'pending').length;
 
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>الجامع — قسنطينة</div>
+        <div className="flex-between" style={{ marginBottom: '14px' }}>
+          <div style={{ fontSize: '18px', fontWeight: 500 }}>
+            <User size={20} style={{ verticalAlign: 'middle', marginLeft: '8px', color: 'var(--green-mid)' }} />
+            جامع — قسنطينة
+          </div>
+          <span className="badge badge-green">
+            <TrendingUp size={12} style={{ verticalAlign: 'middle', marginLeft: '4px' }} />
+            نشط
+          </span>
+        </div>
         <div className="hero-card">
           <div className="hero-title">المجموع المجمع اليوم</div>
           <div className="hero-val">{todayTotal.toLocaleString()} كجم</div>
@@ -175,8 +229,45 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
           <div className="stat-card"><div className="stat-val">{completedCount}</div><div className="stat-label">حسابات منجزة</div></div>
           <div className="stat-card"><div className="stat-val">{confirmedCount}</div><div className="stat-label">تأكيد حضور</div></div>
         </div>
+        <div className="stats">
+          <div className="stat-card">
+            <div className="stat-val" style={{ color: 'var(--orange)' }}>
+              <Wallet size={20} style={{ verticalAlign: 'middle', marginLeft: '6px' }} />
+              {collectorEarnings.toLocaleString()} د.ج
+            </div>
+            <div className="stat-label">الأرباح</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-val">{pendingTasks}</div>
+            <div className="stat-label">مهام معلقة</div>
+          </div>
+        </div>
         <div className="alert info">
           <Bell size={16} /> طلب جديد من جامعة قسنطينة 2 بخصوص عبوات بلاستيكية
+        </div>
+        <div className="card">
+          <div className="card-header"><span className="card-title"><Clock size={16} style={{ verticalAlign: 'middle', marginLeft: '6px' }} />المهام الحالية</span></div>
+          {collectionPoints.filter((p) => p.status === 'upcoming').length > 0 ? (
+            collectionPoints.filter((p) => p.status === 'upcoming').map((p) => {
+              const att = pointAttendance[p.id];
+              return (
+                <div className="order-row" key={p.id}>
+                  <div className="order-avatar" style={{ color: 'var(--orange)' }}>
+                    <Clock size={18} />
+                  </div>
+                  <div className="order-info">
+                    <div className="order-title">{p.accountName}</div>
+                    <div className="order-sub">{p.address} • {p.materials.map((id) => materials.find((m) => m.id === id)?.name ?? id).join('، ')}</div>
+                  </div>
+                  <span className={`badge ${att?.status === 'confirmed' ? 'badge-green' : 'badge-orange'}`}>
+                    {att?.status === 'confirmed' ? 'مؤكد' : 'معلق'}
+                  </span>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-sm" style={{ textAlign: 'center', padding: '16px' }}>لا توجد مهام حالية</div>
+          )}
         </div>
         <div className="card">
           <div className="card-header"><span className="card-title">الحسابات المسجلة اليوم</span></div>
@@ -224,7 +315,10 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
   if (currentTab === 'routes') {
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>الخريطة التفاعلية</div>
+        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>
+          <MapPin size={18} style={{ verticalAlign: 'middle', marginLeft: '8px' }} />
+          الخريطة التفاعلية
+        </div>
         <div className="card" style={{ padding: '8px' }}>
           <Suspense fallback={
             <div style={{ height: '320px', borderRadius: 'var(--radius)', background: 'linear-gradient(160deg,#dcecd4,#e8f0e0)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)', fontSize: '13px' }}>
@@ -309,9 +403,18 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
   }
 
   if (currentTab === 'collection') {
+    const registeredAccounts = collectionPoints.map((p) => ({
+      id: p.id,
+      name: p.accountName ?? p.name,
+      address: p.address,
+    }));
+
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>تسجيل عملية جمع</div>
+        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>
+          <Check size={18} style={{ verticalAlign: 'middle', marginLeft: '8px' }} />
+          تسجيل عملية جمع
+        </div>
         {collSubmitted && (
           <div className="alert success"><Check size={16} /> تم تسجيل عملية الجمع بنجاح</div>
         )}
@@ -319,14 +422,11 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
           <div className="form-row">
             <div className="form-label">الحساب المسجل</div>
             <select className="form-select" value={collPoint} onChange={(e) => setCollPoint(e.target.value)}>
-              {collectionPoints.map((p) => {
-                const matchingUser = partnerUsers.find((user) => user.name === p.accountName);
-                return (
-                  <option key={p.id} value={p.id}>
-                    {(matchingUser?.name ?? p.accountName)} - {p.address}
-                  </option>
-                );
-              })}
+              {registeredAccounts.map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.name} - {acc.address}
+                </option>
+              ))}
             </select>
           </div>
           <div className="form-row">
@@ -377,7 +477,22 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
   if (currentTab === 'history') {
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>سجل العمليات</div>
+        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>
+          <TrendingUp size={18} style={{ verticalAlign: 'middle', marginLeft: '8px' }} />
+          سجل العمليات والأرباح
+        </div>
+        <div className="card" style={{ marginBottom: '10px' }}>
+          <div className="flex-between">
+            <div>
+              <div className="stat-val" style={{ fontSize: '20px' }}>{collectorEarnings.toLocaleString()} د.ج</div>
+              <div className="stat-label">إجمالي الأرباح</div>
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div className="stat-val" style={{ fontSize: '20px' }}>{collections.length}</div>
+              <div className="stat-label">عدد العمليات</div>
+            </div>
+          </div>
+        </div>
         {collections.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', padding: '24px' }}>
             <div className="text-sm">لا توجد عمليات جمع مسجلة</div>
@@ -393,6 +508,7 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--green-mid)' }}>{r.weight} كجم</div>
                   <div className="text-sm">{r.materials.map((m) => materials.find((mat) => mat.id === m)?.name ?? m).join('، ')}</div>
+                  <div className="text-sm" style={{ color: 'var(--orange)', fontWeight: 500 }}>+{Math.round(r.weight * 0.5)} د.ج</div>
                 </div>
               </div>
             </div>

@@ -28,6 +28,7 @@ import {
   Settings,
   Gift,
   FileText,
+  LogOut,
 } from 'lucide-react';
 
 interface AppShellProps {
@@ -82,6 +83,7 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
   const currentRole = useStore((s) => s.session.currentRole);
   const config = useStore((s) => s.config);
   const switchRole = useStore((s) => s.switchRole);
+  const logout = useStore((s) => s.logout);
   const notifications = useStore((s) => s.notifications);
 
   const [notifOpen, setNotifOpen] = useState(false);
@@ -107,7 +109,7 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
   }, [handleClick]);
 
   const navItems = navConfig[currentRole] || navConfig.sorter;
-  const unreadCount = notifications.filter((n) => n.isNew).length;
+  const unreadCount = notifications.filter((n) => n.isNew && n.role === currentRole).length;
 
   function renderViews() {
     switch (currentRole) {
@@ -136,6 +138,9 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
               <div className="topbar-slogan">اجمع لأثر يدوم</div>
             </div>
             <div className="topbar-right">
+              <button className="notif-btn" onClick={() => logout()} title="تسجيل الخروج">
+                <LogOut size={16} />
+              </button>
               <button className="notif-btn" onClick={() => setNotifOpen(!notifOpen)}>
                 <Bell size={18} />
                 {unreadCount > 0 && <span className="notif-dot"></span>}
@@ -191,7 +196,7 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
       </div>
 
       <div ref={notifRef}>
-        <NotifPanel isOpen={notifOpen} />
+        <NotifPanel isOpen={notifOpen} currentRole={currentRole} />
       </div>
     </div>
   );
