@@ -175,17 +175,30 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
       <div className="app-shell">
         <div className="topbar">
           <div className="topbar-inner">
-            <div>
-              <div className="topbar-logo">
-                <span style={{ fontSize: '24px', verticalAlign: 'middle' }}>♻</span>
-                <span style={{ verticalAlign: 'middle', marginRight: '6px' }}>CERCLY</span>
-              </div>
-              <div className="topbar-slogan">اجمع لأثر يدوم</div>
-            </div>
             <div className="topbar-right">
-              <button className="notif-btn" onClick={() => logout()} title="تسجيل الخروج">
-                <LogOut size={16} />
-              </button>
+              <div className="role-wrap" ref={roleRef}>
+                <div className="user-chip" onClick={() => setRoleOpen((p) => !p)}>
+                  <div className="avatar">{displayRoleAvatars[currentRole] || config.roleAvatars[currentRole]}</div>
+                  <span>{config.roleNames[currentRole]}</span>
+                  <ChevronDown size={12} />
+                </div>
+                {roleOpen && (
+                  <div className="role-dropdown">
+                    <div className="role-dropdown-header">تغيير الدور</div>
+                    {roles.map((r) => (
+                      <button
+                        key={r}
+                        className={`role-option${r === currentRole ? ' active' : ''}`}
+                        onClick={() => { switchRole(r); setRoleOpen(false); }}
+                      >
+                        <div className="avatar-sm">{displayRoleAvatars[r] || config.roleAvatars[r]}</div>
+                        <span>{config.roleNames[r]}</span>
+                        {r === currentRole && <span className="role-check">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button className="notif-btn" onClick={() => setNotifOpen(!notifOpen)}>
                 <Bell size={18} />
                 {unreadCount > 0 && (
@@ -210,29 +223,16 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
                   </span>
                 )}
               </button>
-              <div className="role-wrap" ref={roleRef}>
-                <div className="user-chip" onClick={() => setRoleOpen((p) => !p)}>
-                  <div className="avatar">{displayRoleAvatars[currentRole] || config.roleAvatars[currentRole]}</div>
-                  <span>{config.roleNames[currentRole]}</span>
-                  <ChevronDown size={12} />
-                </div>
-                {roleOpen && (
-                  <div className="role-dropdown">
-                    <div className="role-dropdown-header">تغيير الدور</div>
-                    {roles.map((r) => (
-                      <button
-                        key={r}
-                        className={`role-option${r === currentRole ? ' active' : ''}`}
-                        onClick={() => { switchRole(r); setRoleOpen(false); }}
-                      >
-                        <div className="avatar-sm">{displayRoleAvatars[r] || config.roleAvatars[r]}</div>
-                        <span>{config.roleNames[r]}</span>
-                        {r === currentRole && <span className="role-check">✓</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <button className="notif-btn" onClick={() => logout()} title="تسجيل الخروج">
+                <LogOut size={16} />
+              </button>
+            </div>
+            <div>
+              <div className="topbar-logo">
+                <span style={{ fontSize: '24px', verticalAlign: 'middle' }}>♻</span>
+                <span style={{ verticalAlign: 'middle', marginRight: '6px' }}>CERCLY</span>
               </div>
+              <div className="topbar-slogan">اجمع لأثر يدوم</div>
             </div>
           </div>
         </div>

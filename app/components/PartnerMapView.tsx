@@ -112,7 +112,7 @@ export default function PartnerMapView({ companies, trucks, center }: PartnerMap
         <Marker
           key={truck.id}
           position={[truck.lat, truck.lng]}
-          icon={createIcon(`شاحنة ${index + 1}`, '#1f9d8b')}
+          icon={createIcon(`دراحة ${index + 1}`, '#1f9d8b')}
         >
           <Popup>
             <div style={{ fontSize: '13px', fontWeight: 600 }}>{truck.name}</div>

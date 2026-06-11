@@ -309,7 +309,7 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
   if (currentTab === 'reports') {
     return (
       <>
-        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>مواقع التدوير والشاحنات</div>
+        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>مواقع التدوير والدراجات</div>
         <div className="card" style={{ padding: '8px' }}>
           <Suspense fallback={
             <div style={{ height: '320px', borderRadius: 'var(--radius-card)', background: 'linear-gradient(90deg, #EBE8E0 25%, #F5F3EE 50%, #EBE8E0 75%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dark)', fontSize: '13px' }}>
@@ -322,7 +322,7 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
 
         <div className="card">
           <div className="card-header">
-            <span className="card-title">تتبع الشاحنات النشطة</span>
+            <span className="card-title">تتبع الدراجات النشطة</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {trucks.map((truck, i) => {

@@ -169,21 +169,21 @@ export const seedRecyclingCompanies: RecyclingCompany[] = [
 export const seedTrucks: TruckLocation[] = [
   {
     id: "t1",
-    name: "دراجة CERCLY 01",
+    name: " CERCLY 01",
     lat: 36.328,
     lng: 6.623,
     status: "loading",
   },
   {
     id: "t2",
-    name: "دراجة CERCLY 02",
+    name: " CERCLY 02",
     lat: 36.278,
     lng: 6.612,
     status: "en_route",
   },
   {
     id: "t3",
-    name: "دراجة CERCLY 03",
+    name: " CERCLY 03",
     lat: 36.3592,
     lng: 6.604,
     status: "delivered",
@@ -948,9 +948,9 @@ export const seedData: AppData = {
     },
     {
       id: "u7",
-      name: "جامعة قسنطينة 2",
+      name: "متجر الحياة",
       role: "partner",
-      email: "uni.constantine@cercly.dz",
+      email: "hayet.market@cercly.dz",
       phone: "+213 31 020 100",
       address: "قسنطينة وسط",
       status: "active",
@@ -988,7 +988,7 @@ export const seedData: AppData = {
     },
     {
       id: "u11",
-      name: "عمار بن عبد المالك",
+      name: "عمار بن عبد العالي",
       role: "partner",
       email: "ammar@cercly.dz",
       phone: "+213 550 999 000",
