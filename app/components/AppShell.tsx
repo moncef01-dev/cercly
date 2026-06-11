@@ -88,6 +88,7 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
 
   const [notifOpen, setNotifOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
+  const [isTabLoading, setIsTabLoading] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const roleRef = useRef<HTMLDivElement>(null);
 
@@ -108,8 +109,40 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
     return () => document.removeEventListener('click', handleClick);
   }, [handleClick]);
 
+  useEffect(() => {
+    setIsTabLoading(true);
+    const timer = setTimeout(() => setIsTabLoading(false), 600);
+    return () => clearTimeout(timer);
+  }, [currentRole, currentTab]);
+
   const navItems = navConfig[currentRole] || navConfig.sorter;
   const unreadCount = notifications.filter((n) => n.isNew && n.role === currentRole).length;
+
+  // Render standardized placeholder skeleton while transitioning
+  function renderSkeleton() {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--gap-section)' }}>
+        {/* Shimmer Title */}
+        <div className="shimmer skeleton-title" style={{ height: '28px', width: '160px' }}></div>
+        
+        {/* Shimmer Hero Card */}
+        <div className="shimmer" style={{ height: '140px', borderRadius: 'var(--radius-hero)', width: '100%' }}></div>
+        
+        {/* Shimmer KPI Grid */}
+        <div className="kpi-grid">
+          <div className="shimmer" style={{ height: '110px', borderRadius: 'var(--radius-card)' }}></div>
+          <div className="shimmer" style={{ height: '110px', borderRadius: 'var(--radius-card)' }}></div>
+        </div>
+
+        {/* Shimmer List Cards */}
+        <div className="skeleton-card">
+          <div className="shimmer skeleton-title" style={{ height: '16px', width: '60%' }}></div>
+          <div className="shimmer skeleton-body" style={{ height: '14px', width: '90%' }}></div>
+          <div className="shimmer skeleton-body-short" style={{ height: '14px', width: '40%' }}></div>
+        </div>
+      </div>
+    );
+  }
 
   function renderViews() {
     switch (currentRole) {
@@ -128,13 +161,25 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
     }
   }
 
+  // Override role names to display standard labels locally in the avatar if needed
+  const displayRoleAvatars: Record<string, string> = {
+    sorter: "فر",
+    collector: "جم",
+    factory: "دو",
+    partner: "فر", // Standardized to 'فر' (فرد/مؤسسة) instead of 'شر'
+    admin: "إد",
+  };
+
   return (
     <div className="screen active" id="screen-app">
       <div className="app-shell">
         <div className="topbar">
           <div className="topbar-inner">
             <div>
-              <div className="topbar-logo">♻ CERCLY</div>
+              <div className="topbar-logo">
+                <span style={{ fontSize: '24px', verticalAlign: 'middle' }}>♻</span>
+                <span style={{ verticalAlign: 'middle', marginRight: '6px' }}>CERCLY</span>
+              </div>
               <div className="topbar-slogan">اجمع لأثر يدوم</div>
             </div>
             <div className="topbar-right">
@@ -143,11 +188,31 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
               </button>
               <button className="notif-btn" onClick={() => setNotifOpen(!notifOpen)}>
                 <Bell size={18} />
-                {unreadCount > 0 && <span className="notif-dot"></span>}
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    right: '-2px',
+                    background: 'var(--gold)',
+                    color: 'var(--black)',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    borderRadius: '50%',
+                    width: '18px',
+                    height: '18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid var(--primary-green)',
+                    zIndex: 2,
+                  }}>
+                    {unreadCount}
+                  </span>
+                )}
               </button>
               <div className="role-wrap" ref={roleRef}>
                 <div className="user-chip" onClick={() => setRoleOpen((p) => !p)}>
-                  <div className="avatar">{config.roleAvatars[currentRole]}</div>
+                  <div className="avatar">{displayRoleAvatars[currentRole] || config.roleAvatars[currentRole]}</div>
                   <span>{config.roleNames[currentRole]}</span>
                   <ChevronDown size={12} />
                 </div>
@@ -160,7 +225,7 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
                         className={`role-option${r === currentRole ? ' active' : ''}`}
                         onClick={() => { switchRole(r); setRoleOpen(false); }}
                       >
-                        <div className="avatar-sm">{config.roleAvatars[r]}</div>
+                        <div className="avatar-sm">{displayRoleAvatars[r] || config.roleAvatars[r]}</div>
                         <span>{config.roleNames[r]}</span>
                         {r === currentRole && <span className="role-check">✓</span>}
                       </button>
@@ -173,7 +238,7 @@ export default function AppShell({ currentTab, onSetTab }: AppShellProps) {
         </div>
 
         <div className="content" id="main-content">
-          {renderViews()}
+          {isTabLoading ? renderSkeleton() : renderViews()}
         </div>
 
         <nav className="bottom-nav" id="bottom-nav">

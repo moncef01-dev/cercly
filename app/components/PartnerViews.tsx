@@ -85,70 +85,78 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
   const [reqWeight, setReqWeight] = useState('');
   const [reqBottles, setReqBottles] = useState('');
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isRedeeming, setIsRedeeming] = useState<string | null>(null);
+
   function handleRequestCollection() {
     if (!reqAddress.trim() || reqMaterials.length === 0 || !reqDate) return;
+    setIsSubmitting(true);
 
-    const pointId = `p-${Date.now()}`;
-    const weight = parseInt(reqWeight) || 0;
-    const bottles = parseInt(reqBottles) || 0;
+    setTimeout(() => {
+      const pointId = `p-${Date.now()}`;
+      const weight = parseInt(reqWeight) || 0;
+      const bottles = parseInt(reqBottles) || 0;
 
-    addCollectionPoint({
-      id: pointId,
-      name: reqAddress.trim(),
-      address: reqAddress.trim(),
-      lat: 36.3500 + Math.random() * 0.02,
-      lng: 6.6200 + Math.random() * 0.02,
-      materials: reqMaterials,
-      status: 'upcoming',
-      order: collectionPoints.length + 1,
-      quantityMode: bottles > 0 ? 'bottles' : 'kg',
-      quantityValue: bottles > 0 ? bottles : weight,
-    });
-
-    addSchedule({
-      id: `sch-${Date.now()}`,
-      partnerId: 'u4',
-      pointId,
-      pointName: reqAddress.trim(),
-      address: reqAddress.trim(),
-      scheduledDate: reqDate,
-      scheduledTime: reqTime,
-      status: 'pending',
-      quantityMode: bottles > 0 ? 'bottles' : 'kg',
-      quantityValue: bottles > 0 ? bottles : weight,
-    });
-
-    const totalPoints = reqMaterials.reduce((sum, mat) => sum + calcPoints(mat, weight / Math.max(reqMaterials.length, 1), bottles), 0);
-    updatePartnerProfile({ points: profile.points + totalPoints, totalRecycled: profile.totalRecycled + (weight / 1000) });
-
-    if (totalPoints > 0) {
-      addPointsHistory({
-        id: `ph-earn-${Date.now()}`,
-        points: totalPoints,
-        reason: `تقدير نقاط عن ${reqMaterials.length} مادة`,
-        date: new Date().toLocaleDateString('fr-FR'),
-        type: 'earned',
+      addCollectionPoint({
+        id: pointId,
+        name: reqAddress.trim(),
+        address: reqAddress.trim(),
+        lat: 36.3500 + Math.random() * 0.02,
+        lng: 6.6200 + Math.random() * 0.02,
+        materials: reqMaterials,
+        status: 'upcoming',
+        order: collectionPoints.length + 1,
+        quantityMode: bottles > 0 ? 'bottles' : 'kg',
+        quantityValue: bottles > 0 ? bottles : weight,
       });
-    }
 
-    addNotification({
-      id: generateNotifId(),
-      icon: '📦',
-      title: 'طلب جمع جديد',
-      text: `تم تقديم طلب جمع جديد في ${reqAddress.trim()}`,
-      time: 'الآن', isNew: true, type: 'info',
-      role: 'partner',
-    });
+      addSchedule({
+        id: `sch-${Date.now()}`,
+        partnerId: 'u4',
+        pointId,
+        pointName: reqAddress.trim(),
+        address: reqAddress.trim(),
+        scheduledDate: reqDate,
+        scheduledTime: reqTime,
+        status: 'pending',
+        quantityMode: bottles > 0 ? 'bottles' : 'kg',
+        quantityValue: bottles > 0 ? bottles : weight,
+      });
 
-    setReqSubmitted(true);
-    setShowRequestForm(false);
-    setReqAddress('');
-    setReqMaterials([]);
-    setReqDate('');
-    setReqTime('10:00');
-    setReqWeight('');
-    setReqBottles('');
-    setTimeout(() => setReqSubmitted(false), 3000);
+      const totalPoints = reqMaterials.reduce((sum, mat) => sum + calcPoints(mat, weight / Math.max(reqMaterials.length, 1), bottles), 0);
+      updatePartnerProfile({ points: profile.points + totalPoints, totalRecycled: profile.totalRecycled + (weight / 1000) });
+
+      if (totalPoints > 0) {
+        addPointsHistory({
+          id: `ph-earn-${Date.now()}`,
+          points: totalPoints,
+          reason: `تقدير نقاط عن ${reqMaterials.length} مادة`,
+          date: new Date().toLocaleDateString('fr-FR'),
+          type: 'earned',
+        });
+      }
+
+      addNotification({
+        id: generateNotifId(),
+        icon: '📦',
+        title: 'طلب جمع جديد',
+        text: `تم تقديم طلب جمع جديد في ${reqAddress.trim()}`,
+        time: 'الآن', isNew: true, type: 'info',
+        role: 'partner',
+      });
+
+      setReqSubmitted(true);
+      setShowRequestForm(false);
+      setReqAddress('');
+      setReqMaterials([]);
+      setReqDate('');
+      setReqTime('10:00');
+      setReqWeight('');
+      setReqBottles('');
+      setIsSubmitting(false);
+      setTimeout(() => setReqSubmitted(false), 3000);
+    }, 1000);
   }
 
   function toggleReqMaterial(mat: MaterialType) {
@@ -157,10 +165,11 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
     );
   }
 
+  // Enforce the exact environmental impact cards order
   const impactItems = useMemo(() => [
-    { icon: <Wind size={24} />, label: 'CO₂ مخفض', val: `${Math.round(profile.totalRecycled * 158)} كجم` },
-    { icon: <Droplets size={24} />, label: 'مياه موفرة', val: `${(profile.totalRecycled * 228).toLocaleString()} ل` },
-    { icon: <TreePine size={24} />, label: 'أشجار محمية', val: `${Math.round(profile.totalRecycled * 1.5)}` },
+    { icon: "🌳", label: 'أشجار محمية', val: `${profile.treesProtected}` },
+    { icon: "💧", label: 'مياه موفرة', val: `${(profile.waterSaved).toLocaleString()} ل` },
+    { icon: "☁️", label: 'انبعاثات CO₂ المخفضة', val: `${Math.round(profile.co2Saved * 100)} كجم` },
   ], [profile]);
 
   const mySchedules = useMemo(
@@ -177,7 +186,7 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
     pending: { label: 'بانتظار التأكيد', badge: 'badge-orange' },
     confirmed: { label: 'تم التأكيد', badge: 'badge-green' },
     postponed: { label: 'مؤجل', badge: 'badge-blue' },
-    completed: { label: 'تم الجمع', badge: 'badge-green' },
+    completed: { label: '✓ مكتمل', badge: 'badge-gold' },
     cancelled: { label: 'ملغي', badge: 'badge-orange' },
   };
 
@@ -213,13 +222,21 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
   }
 
   function handleSaveProfile() {
-    updatePartnerProfile({ address: editAddress, phone: editPhone });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setIsSavingProfile(true);
+    setTimeout(() => {
+      updatePartnerProfile({ address: editAddress, phone: editPhone });
+      setSaved(true);
+      setIsSavingProfile(false);
+      setTimeout(() => setSaved(false), 3000);
+    }, 1000);
   }
 
   function handleRedeem(reward: typeof rewards[number]) {
-    redeemReward(reward);
+    setIsRedeeming(reward.id);
+    setTimeout(() => {
+      redeemReward(reward);
+      setIsRedeeming(null);
+    }, 1000);
   }
 
   const centerForMap = { name: 'مركز فرز قسنطينة', address: 'قسنطينة وسط', lat: 36.3650, lng: 6.6147 };
@@ -234,53 +251,81 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
   if (currentTab === 'dashboard') {
     return (
       <>
-        <div className="flex-between" style={{ marginBottom: '14px' }}>
-          <div style={{ fontSize: '18px', fontWeight: 500 }}>فرد / مؤسسة</div>
-          <span className="badge badge-green">مستوى {level}</span>
+        {/* 1. Header is rendered by AppShell */}
+
+        {/* 2. Hero Summary Card (Points) - Radius 28px */}
+        <div className="hero-card gold-card">
+          <div className="hero-title">رصيد النقاط الحالي</div>
+          <div className="hero-val">{profile.points.toLocaleString()} نقطة</div>
+          <div className="hero-sub">اجمع لأثر يدوم • مستوى {level}</div>
         </div>
-        <div className="hero-card">
-          <div className="hero-title">رصيد النقاط</div>
-          <div className="hero-val">{profile.points.toLocaleString()}</div>
-          <div className="hero-sub">اجمع لأثر يدوم • المواد المعاد تدويرها: {profile.totalRecycled} طن</div>
-        </div>
-        <div className="card" style={{ padding: '12px 16px' }}>
-          <div className="flex-between" style={{ marginBottom: '6px' }}>
+
+        {/* Level Progression Progress Bar Card */}
+        <div className="card">
+          <div className="flex-between">
             <span className="text-sm">التقدم إلى المستوى {level + 1}</span>
-            <span className="text-sm">{profile.points} / {nextLevelPoints} نقاط</span>
+            <span className="text-sm" style={{ fontWeight: 600 }}>{profile.points} / {nextLevelPoints} نقطة</span>
           </div>
           <div className="prog-bar">
             <div className="prog-fill" style={{ width: `${Math.min(progress, 100)}%` }} />
           </div>
         </div>
+
+        {/* 3. KPI Cards - 2-column grid, equal size, centered metrics, values converted to KG */}
+        <div className="kpi-grid">
+          <div className="kpi-card">
+            <div className="kpi-metric">{profile.points}</div>
+            <div className="kpi-label">نقطة مكافأة</div>
+          </div>
+          <div className="kpi-card">
+            <div className="kpi-metric">{Math.round(profile.totalRecycled * 1000).toLocaleString()}</div>
+            <div className="kpi-label">كجم مجمع</div>
+          </div>
+          <div className="kpi-card">
+            <div className="kpi-metric">{Math.round(profile.co2Saved * 100)}</div>
+            <div className="kpi-label">كجم CO₂ مخفض</div>
+          </div>
+          <div className="kpi-card">
+            <div className="kpi-metric">{profile.treesProtected}</div>
+            <div className="kpi-label">شجرة محمية</div>
+          </div>
+        </div>
+
+        {/* Success States */}
         {reqSubmitted && (
-          <div className="alert success"><Check size={16} /> تم تقديم طلب الجمع بنجاح</div>
+          <div className="success-banner">
+            <span className="success-icon">✓</span>
+            <span>تمت العملية بنجاح - تم تقديم طلب الجمع بنجاح</span>
+          </div>
         )}
 
+        {/* 4. Primary Actions - Create Request Card */}
         <div className="card">
           <div className="card-header">
             <span className="card-title">طلب جمع جديد</span>
             {!showRequestForm && (
-              <button className="btn-sm primary" onClick={() => setShowRequestForm(true)}>
+              <button className="btn-primary" style={{ minHeight: '40px', padding: '6px 14px', borderRadius: '12px' }} onClick={() => setShowRequestForm(true)}>
                 <Plus size={14} /> طلب جمع
               </button>
             )}
           </div>
           {showRequestForm && (
-            <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div className="form-row">
                 <div className="form-label">العنوان</div>
-                <input className="inp" type="text" style={{ margin: 0 }} value={reqAddress}
+                <input className="inp" type="text" value={reqAddress}
                   onChange={(e) => setReqAddress(e.target.value)} placeholder="أدخل عنوان موقع الجمع" />
               </div>
               <div className="form-row">
                 <div className="form-label">المواد المراد جمعها</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
                   {materials.filter((m) => allowedMaterials.includes(m.id)).map((m) => (
                     <label key={m.id} style={{
-                      display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px',
-                      border: `1.5px solid ${reqMaterials.includes(m.id) ? 'var(--green-mid)' : 'var(--border)'}`,
-                      borderRadius: '8px', cursor: 'pointer', fontSize: '12px',
-                      background: reqMaterials.includes(m.id) ? 'var(--green-50)' : '#fff',
+                      display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px',
+                      border: `1.5px solid ${reqMaterials.includes(m.id) ? 'var(--primary-green)' : 'var(--border)'}`,
+                      borderRadius: '12px', cursor: 'pointer', fontSize: '13px',
+                      background: reqMaterials.includes(m.id) ? 'var(--light-green)' : '#fff',
+                      color: 'var(--text-dark)'
                     }}>
                       <input type="checkbox" checked={reqMaterials.includes(m.id)}
                         onChange={() => toggleReqMaterial(m.id)} /> {m.icon} {m.name}
@@ -288,137 +333,126 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
                   ))}
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '12px' }}>
                 <div className="form-row" style={{ flex: 1 }}>
                   <div className="form-label">الوزن (كجم)</div>
-                  <input className="inp" type="number" style={{ margin: 0 }} value={reqWeight}
+                  <input className="inp" type="number" value={reqWeight}
                     onChange={(e) => setReqWeight(e.target.value)} placeholder="الوزن" />
                 </div>
                 <div className="form-row" style={{ flex: 1 }}>
                   <div className="form-label">عدد القوارير</div>
-                  <input className="inp" type="number" style={{ margin: 0 }} value={reqBottles}
+                  <input className="inp" type="number" value={reqBottles}
                     onChange={(e) => setReqBottles(e.target.value)} placeholder="عدد القوارير" />
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '12px' }}>
                 <div className="form-row" style={{ flex: 1 }}>
                   <div className="form-label">التاريخ</div>
-                  <input className="inp" type="text" style={{ margin: 0 }} value={reqDate}
+                  <input className="inp" type="text" value={reqDate}
                     onChange={(e) => setReqDate(e.target.value)} placeholder="مثال: 15/06" />
                 </div>
                 <div className="form-row" style={{ flex: 1 }}>
                   <div className="form-label">الوقت</div>
-                  <input className="inp" type="text" style={{ margin: 0 }} value={reqTime}
+                  <input className="inp" type="text" value={reqTime}
                     onChange={(e) => setReqTime(e.target.value)} placeholder="مثال: 14:30" />
                 </div>
               </div>
               {reqMaterials.length > 0 && (
-                <div className="card" style={{ background: 'var(--green-50)', padding: '10px', marginBottom: '10px', border: 'none' }}>
-                  <div className="text-sm" style={{ fontWeight: 500 }}>النقاط المتوقعة:</div>
+                <div className="card" style={{ background: 'var(--light-green)', padding: '12px', border: 'none', gap: '4px' }}>
+                  <div className="text-sm" style={{ fontWeight: 700, color: 'var(--primary-green)' }}>النقاط المتوقعة:</div>
                   {reqMaterials.map((mat) => {
                     const weight = parseInt(reqWeight) || 0;
                     const bottles = parseInt(reqBottles) || 0;
                     const pts = calcPoints(mat, weight / Math.max(reqMaterials.length, 1), bottles / Math.max(reqMaterials.length, 1));
                     const matName = materials.find((m) => m.id === mat)?.name ?? mat;
-                    return <div key={mat} className="text-sm" style={{ marginTop: '2px' }}>+{pts} نقطة ({matName})</div>;
+                    return <div key={mat} className="text-sm" style={{ color: 'var(--text-dark)', fontWeight: 600 }}>+{pts} نقطة ({matName})</div>;
                   })}
                 </div>
               )}
               <div className="btn-row">
-                <button className="btn-sm primary" onClick={handleRequestCollection}>
-                  <Check size={14} /> تأكيد الطلب
+                <button className="btn-primary" style={{ flex: 1 }} onClick={handleRequestCollection} disabled={isSubmitting}>
+                  {isSubmitting ? 'جارٍ المعالجة...' : 'تأكيد الطلب'}
                 </button>
-                <button className="btn-sm" onClick={() => { setShowRequestForm(false); setReqMaterials([]); }}>
-                  <X size={14} /> إلغاء
+                <button className="btn-secondary" onClick={() => { setShowRequestForm(false); setReqMaterials([]); }} disabled={isSubmitting}>
+                  إلغاء
                 </button>
               </div>
-            </>
+            </div>
           )}
         </div>
 
-        <div className="stats">
-          <div className="stat-card">
-            <div className="stat-val">{profile.points}</div>
-            <div className="stat-label">نقاط المكافأة</div>
-            <div className="stat-change">↑ {pointsHistory.filter((p) => p.type === 'earned').slice(0, 3).reduce((s, p) => s + p.points, 0)} هذا الأسبوع</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-val">{profile.totalRecycled} طن</div>
-            <div className="stat-label">إجمالي التدوير</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-val">{Math.round(profile.co2Saved * 100)} كجم</div>
-            <div className="stat-label">CO₂ مخفض</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-val">مستوى {level}</div>
-            <div className="stat-label">درجة المشاركة</div>
-          </div>
-        </div>
-
+        {/* 5. Main Content - Environmental Impact section in correct order */}
         <div className="card">
-          <div className="card-title" style={{ marginBottom: '10px' }}>الأثر البيئي</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+          <div className="card-title">الأثر البيئي</div>
+          <div className="impact-grid">
             {impactItems.map((item, i) => (
-              <div className="stat-card" style={{ textAlign: 'center', padding: '12px' }} key={i}>
-                <div style={{ fontSize: '22px', color: 'var(--green-mid)', marginBottom: '4px' }}>{item.icon}</div>
-                <div style={{ fontSize: '16px', fontWeight: 500, color: 'var(--green-mid)' }}>{item.val}</div>
-                <div className="text-sm">{item.label}</div>
+              <div className="impact-card" key={i}>
+                <span className="impact-icon">{item.icon}</span>
+                <span className="impact-val">{item.val}</span>
+                <span className="impact-label">{item.label}</span>
               </div>
             ))}
           </div>
         </div>
 
+        {/* 6. Recent Activity - Upcoming Appointments */}
         <div className="card">
-          <div className="card-title" style={{ marginBottom: '10px' }}>مواعيد الجمع القادمة</div>
+          <div className="card-title">مواعيد الجمع القادمة</div>
           {pendingSchedules.length === 0 ? (
-            <div className="text-sm" style={{ textAlign: 'center', padding: '16px' }}>
-              لا توجد مواعيد جمع مجدولة حالياً
+            <div className="empty-state">
+              <span className="empty-icon" style={{ fontSize: '32px' }}>⏳</span>
+              <div className="empty-title">لا توجد مواعيد حالياً</div>
+              <div className="empty-desc">قم بإنشاء طلب جديد للبدء</div>
             </div>
           ) : (
-            pendingSchedules.map((sch) => {
-              const st = statusLabels[sch.status] || statusLabels.pending;
-              return (
-                <div className="card" style={{ marginBottom: '10px', padding: '12px' }} key={sch.id}>
-                  <div className="flex-between" style={{ marginBottom: '8px' }}>
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: 500 }}>{sch.pointName}</div>
-                      <div className="text-sm" style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Calendar size={14} /> {sch.scheduledDate}
-                        <Clock size={14} style={{ marginRight: '8px' }} /> {sch.scheduledTime}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {pendingSchedules.map((sch) => {
+                const st = statusLabels[sch.status] || statusLabels.pending;
+                return (
+                  <div className="card" style={{ padding: '14px', border: '1px solid var(--surface)' }} key={sch.id}>
+                    <div className="flex-between" style={{ marginBottom: '8px' }}>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)' }}>{sch.pointName}</div>
+                        <div className="text-sm" style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Calendar size={14} /> <span>{sch.scheduledDate}</span>
+                          <Clock size={14} style={{ marginRight: '8px' }} /> <span>{sch.scheduledTime}</span>
+                        </div>
                       </div>
+                      <span className={`badge ${st.badge}`}>{st.label}</span>
                     </div>
-                    <span className={`badge ${st.badge}`}>{st.label}</span>
+                    <div className="btn-row">
+                      <button className="btn-primary" style={{ minHeight: '44px', borderRadius: '12px', flex: 1 }} onClick={() => handleConfirm(sch.id, sch.pointName)}>
+                        <Check size={14} /> تأكيد الحضور
+                      </button>
+                      <button className="btn-secondary" style={{ minHeight: '44px', borderRadius: '12px' }} onClick={() => handlePostpone(sch.id, sch.pointName)}>
+                        تأجيل
+                      </button>
+                    </div>
                   </div>
-                  <div className="btn-row" style={{ marginTop: '8px' }}>
-                    <button className="btn-sm primary" onClick={() => handleConfirm(sch.id, sch.pointName)}>
-                      <Check size={14} /> تأكيد الحضور
-                    </button>
-                    <button className="btn-sm" onClick={() => handlePostpone(sch.id, sch.pointName)}>
-                      <X size={14} /> تأجيل
-                    </button>
-                  </div>
-                </div>
-              );
-            })
+                );
+              })}
+            </div>
           )}
         </div>
 
+        {/* History Area */}
         {mySchedules.filter((s) => s.status === 'confirmed' || s.status === 'completed').length > 0 && (
           <div className="card">
-            <div className="card-title" style={{ marginBottom: '10px' }}>تاريخ المواعيد</div>
-            {mySchedules.filter((s) => s.status === 'confirmed' || s.status === 'completed').map((sch) => {
-              const st = statusLabels[sch.status] || statusLabels.pending;
-              return (
-                <div className="order-row" key={sch.id}>
-                  <div className="order-info">
-                    <div className="order-title">{sch.pointName}</div>
-                    <div className="order-sub">{sch.scheduledDate} — {sch.scheduledTime}</div>
+            <div className="card-title">سجل المواعيد</div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {mySchedules.filter((s) => s.status === 'confirmed' || s.status === 'completed').map((sch) => {
+                const st = statusLabels[sch.status] || statusLabels.pending;
+                return (
+                  <div className="order-row" key={sch.id}>
+                    <div className="order-info">
+                      <div className="order-title">{sch.pointName}</div>
+                      <div className="order-sub">{sch.scheduledDate} — {sch.scheduledTime}</div>
+                    </div>
+                    <span className={`badge ${st.badge}`}>{st.label}</span>
                   </div>
-                  <span className={`badge ${st.badge}`}>{st.label}</span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
       </>
@@ -428,15 +462,15 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
   if (currentTab === 'impact') {
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>الأثر البيئي</div>
+        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>الأثر البيئي</div>
         <div className="card">
-          <div className="card-title" style={{ marginBottom: '14px' }}>مساهمتك البيئية</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div className="card-title">مساهمتك البيئية الإجمالية</div>
+          <div className="impact-grid">
             {impactItems.map((item, i) => (
-              <div className="stat-card" style={{ textAlign: 'center' }} key={i}>
-                <div style={{ fontSize: '28px', color: 'var(--green-mid)' }}>{item.icon}</div>
-                <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--green-mid)' }}>{item.val}</div>
-                <div className="text-sm">{item.label}</div>
+              <div className="impact-card" key={i}>
+                <span className="impact-icon">{item.icon}</span>
+                <span className="impact-val">{item.val}</span>
+                <span className="impact-label">{item.label}</span>
               </div>
             ))}
           </div>
@@ -449,10 +483,10 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
   if (currentTab === 'map') {
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>خريطة المواقع</div>
+        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>خريطة المواقع</div>
         <div className="card" style={{ padding: '8px' }}>
           <Suspense fallback={
-            <div style={{ height: '320px', borderRadius: 'var(--radius)', background: 'linear-gradient(160deg,#dcecd4,#eef6e8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)', fontSize: '13px' }}>
+            <div style={{ height: '320px', borderRadius: 'var(--radius-card)', background: 'linear-gradient(90deg, #EBE8E0 25%, #F5F3EE 50%, #EBE8E0 75%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dark)', fontSize: '13px' }}>
               جاري تحميل خريطة المواقع...
             </div>
           }>
@@ -460,21 +494,23 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
           </Suspense>
         </div>
         <div className="card">
-          <div className="card-title" style={{ marginBottom: '10px' }}>تتبع الشاحنات</div>
-          {trucks.map((truck, i) => (
-            <div className="order-row" key={truck.id}>
-              <div className="order-avatar" style={{ background: '#fff3e0', color: 'var(--orange)' }}>
-                🚛
+          <div className="card-title">تتبع الشاحنات</div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {trucks.map((truck, i) => (
+              <div className="order-row" key={truck.id}>
+                <div className="order-avatar" style={{ background: '#FFFDF6', color: 'var(--gold)' }}>
+                  🚛
+                </div>
+                <div className="order-info">
+                  <div className="order-title">شاحنة {i + 1}</div>
+                  <div className="order-sub">{truck.name}</div>
+                </div>
+                <span className={`badge ${truck.status === 'loading' ? 'badge-orange' : truck.status === 'en_route' ? 'badge-blue' : 'badge-green'}`}>
+                  {truck.status === 'loading' ? 'تحميل' : truck.status === 'en_route' ? 'في الطريق' : 'تم التسليم'}
+                </span>
               </div>
-              <div className="order-info">
-                <div className="order-title">شاحنة {i + 1}</div>
-                <div className="order-sub">{truck.name}</div>
-              </div>
-              <span className={`badge ${truck.status === 'loading' ? 'badge-orange' : truck.status === 'en_route' ? 'badge-blue' : 'badge-green'}`}>
-                {truck.status === 'loading' ? 'تحميل' : truck.status === 'en_route' ? 'في الطريق' : 'تم التسليم'}
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </>
     );
@@ -483,35 +519,38 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
   if (currentTab === 'rewards') {
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>المكافآت والنقاط</div>
-        <div className="hero-card" style={{ background: 'linear-gradient(135deg,#e07b2a 0%,#f5a855 50%,#ffc107 100%)' }}>
+        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>المكافآت والنقاط</div>
+        
+        {/* Gold Summary Hero Card */}
+        <div className="hero-card gold-card">
           <div className="hero-title">رصيد النقاط الحالي</div>
-          <div className="hero-val">{profile.points.toLocaleString()}</div>
-          <div className="hero-sub">استبدل نقاطك بمكافآت رائعة</div>
+          <div className="hero-val">{profile.points.toLocaleString()} نقطة</div>
+          <div className="hero-sub">استبدل نقاطك بمكافآت بيئية رائعة</div>
         </div>
 
         <div className="card">
           <div className="card-header">
-            <span className="card-title"><Gift size={16} style={{ verticalAlign: 'middle', marginLeft: '6px' }} />المكافآت المتاحة</span>
+            <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Gift size={16} style={{ color: 'var(--gold)' }} />
+              المكافآت المتاحة
+            </span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             {rewards.map((reward) => (
-              <div className="stat-card" style={{ textAlign: 'center', padding: '12px' }} key={reward.id}>
-                <div style={{ fontSize: '24px', marginBottom: '6px' }}>
-                  <Gift size={24} style={{ color: 'var(--orange)' }} />
-                </div>
-                <div style={{ fontSize: '13px', fontWeight: 500 }}>{reward.name}</div>
-                <div className="text-sm" style={{ margin: '4px 0' }}>{reward.storeName}</div>
-                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--orange)', marginBottom: '8px' }}>
+              <div className="kpi-card" style={{ padding: '16px 12px', gap: '6px' }} key={reward.id}>
+                <span style={{ fontSize: '26px' }}>🎁</span>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)' }}>{reward.name}</div>
+                <div className="text-sm" style={{ opacity: 0.8 }}>{reward.storeName}</div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--gold)' }}>
                   {reward.pointsCost} نقطة
                 </div>
                 <button
-                  className={`btn-sm ${profile.points >= reward.pointsCost ? 'primary' : ''}`}
-                  style={{ width: '100%', fontSize: '11px' }}
-                  disabled={profile.points < reward.pointsCost}
+                  className="btn-primary"
+                  style={{ width: '100%', minHeight: '38px', borderRadius: '12px', fontSize: '11px', padding: '4px' }}
+                  disabled={profile.points < reward.pointsCost || isRedeeming !== null}
                   onClick={() => handleRedeem(reward)}
                 >
-                  {profile.points >= reward.pointsCost ? 'استبدال' : 'نقاط غير كافية'}
+                  {isRedeeming === reward.id ? 'جارٍ الاستبدال...' : profile.points >= reward.pointsCost ? 'استبدال' : 'نقاط غير كافية'}
                 </button>
               </div>
             ))}
@@ -520,50 +559,60 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
 
         <div className="card">
           <div className="card-header">
-            <span className="card-title"><History size={16} style={{ verticalAlign: 'middle', marginLeft: '6px' }} />سجل النقاط</span>
+            <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <History size={16} style={{ color: 'var(--gold)' }} />
+              سجل العمليات
+            </span>
           </div>
-          {pointsHistory.slice(0, 10).map((ph) => (
-            <div className="order-row" key={ph.id}>
-              <div className="order-avatar" style={{
-                background: ph.type === 'earned' ? 'var(--green-50)' : 'var(--orange-bg)',
-                color: ph.type === 'earned' ? 'var(--green-mid)' : 'var(--orange)'
-              }}>
-                {ph.type === 'earned' ? '+' : '-'}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {pointsHistory.slice(0, 10).map((ph) => (
+              <div className="order-row" key={ph.id}>
+                <div className="order-avatar" style={{
+                  background: ph.type === 'earned' ? 'var(--light-green)' : '#FFFDF6',
+                  color: ph.type === 'earned' ? 'var(--primary-green)' : 'var(--gold)'
+                }}>
+                  {ph.type === 'earned' ? '+' : '-'}
+                </div>
+                <div className="order-info">
+                  <div className="order-title">{ph.reason}</div>
+                  <div className="order-sub">{ph.date}</div>
+                </div>
+                <div style={{
+                  fontSize: '14px', fontWeight: 700,
+                  color: ph.type === 'earned' ? 'var(--primary-green)' : 'var(--gold)'
+                }}>
+                  {ph.type === 'earned' ? '+' : '-'}{ph.points}
+                </div>
               </div>
-              <div className="order-info">
-                <div className="order-title">{ph.reason}</div>
-                <div className="order-sub">{ph.date}</div>
-              </div>
-              <div style={{
-                fontSize: '14px', fontWeight: 600,
-                color: ph.type === 'earned' ? 'var(--green-mid)' : 'var(--orange)'
-              }}>
-                {ph.type === 'earned' ? '+' : '-'}{ph.points}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         <div className="card">
           <div className="card-header">
-            <span className="card-title"><Store size={16} style={{ verticalAlign: 'middle', marginLeft: '6px' }} />متاجر التوفير الخضراء</span>
+            <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Store size={16} style={{ color: 'var(--primary-green)' }} />
+              شركاء الأثر الأخضر
+            </span>
           </div>
-          {greenPartnerStores.map((store) => (
-            <div className="order-row" key={store.id}>
-              <div className="order-avatar" style={{ color: 'var(--green-mid)' }}>
-                <Store size={18} />
-              </div>
-              <div className="order-info">
-                <div className="order-title">{store.name}</div>
-                <div className="order-sub">{store.address}</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
-                  {store.offers.map((offer, i) => (
-                    <span className="tag" key={i} style={{ fontSize: '10px' }}>{offer}</span>
-                  ))}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {greenPartnerStores.map((store) => (
+              <div className="order-row" key={store.id}>
+                <div className="order-avatar" style={{ color: 'var(--primary-green)', background: 'var(--light-green)' }}>
+                  <Store size={18} />
+                </div>
+                <div className="order-info">
+                  <div className="order-title">{store.name}</div>
+                  <div className="order-sub">{store.address} • {store.description}</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                    {store.offers.map((offer, i) => (
+                      <span className="tag" key={i} style={{ fontSize: '10px' }}>{offer}</span>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </>
     );
@@ -572,30 +621,33 @@ export default function PartnerViews({ currentTab }: PartnerViewsProps) {
   if (currentTab === 'profile') {
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>الملف الشخصي</div>
+        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>الملف الشخصي</div>
         {saved && (
-          <div className="alert success"><Check size={16} /> تم حفظ التعديلات بنجاح</div>
+          <div className="success-banner">
+            <span className="success-icon">✓</span>
+            <span>تمت العملية بنجاح - تم حفظ التعديلات بنجاح</span>
+          </div>
         )}
-        <div className="card" style={{ textAlign: 'center', padding: '24px' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--green-50)', color: 'var(--green-mid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 500, margin: '0 auto 12px' }}>
+        <div className="card" style={{ textAlign: 'center', padding: '24px', alignItems: 'center' }}>
+          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--light-green)', color: 'var(--primary-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 4px' }}>
             <Star size={28} />
           </div>
-          <div style={{ fontSize: '16px', fontWeight: 500 }}>{profile.name}</div>
-          <div className="text-sm" style={{ marginTop: '4px' }}>{profile.address}</div>
-          <div style={{ marginTop: '12px' }}><span className="badge badge-green">مستوى {level} — مشارك نشط</span></div>
+          <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-dark)' }}>{profile.name}</div>
+          <div className="text-sm" style={{ marginTop: '2px' }}>{profile.address}</div>
+          <div style={{ marginTop: '6px' }}><span className="badge badge-green">مستوى {level} — مشارك نشط</span></div>
         </div>
         <div className="card">
           <div className="form-row">
             <div className="form-label">العنوان</div>
-            <input className="inp" value={editAddress} style={{ margin: 0 }} onChange={(e) => setEditAddress(e.target.value)} />
+            <input className="inp" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} />
           </div>
-          <div className="form-row" style={{ marginTop: '10px' }}>
+          <div className="form-row">
             <div className="form-label">الهاتف</div>
-            <input className="inp" value={editPhone} style={{ margin: 0 }} onChange={(e) => setEditPhone(e.target.value)} />
+            <input className="inp" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
           </div>
-          <div className="btn-row">
-            <button className="btn-sm primary" style={{ flex: 1 }} onClick={handleSaveProfile}>
-              <Check size={16} /> حفظ التعديلات
+          <div className="btn-row" style={{ marginTop: '6px' }}>
+            <button className="btn-primary" style={{ flex: 1 }} onClick={handleSaveProfile} disabled={isSavingProfile}>
+              {isSavingProfile ? 'جارٍ الحفظ...' : 'حفظ التعديلات'}
             </button>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { useState, useMemo, lazy, Suspense } from 'react';
 import { useStore } from '../lib/store';
 import type { Tab, Role } from '../lib/types';
 import Chart from './Chart';
-import { AlertTriangle, AlertCircle, CircleDot, Check, X, Truck, Map, Users, BarChart3, Factory, Gift, Wind, Droplets, TreePine } from 'lucide-react';
+import { AlertTriangle, AlertCircle, CircleDot, Check, X, Truck, Map, Users, BarChart3, Factory, Gift, Wind, Droplets, TreePine, Inbox } from 'lucide-react';
 
 const PartnerMapView = lazy(() => import('./PartnerMapView'));
 
@@ -37,6 +37,9 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
   const [userSearch, setUserSearch] = useState('');
   const [userFilter, setUserFilter] = useState('all');
 
+  const [isUpdatingUser, setIsUpdatingUser] = useState<Record<string, boolean>>({});
+  const [isApproving, setIsApproving] = useState<Record<string, boolean>>({});
+
   const filteredUsers = useMemo(() => {
     const roleFilter = roleFilterLabels[userFilter] as Role | null;
     return users.filter((u) => {
@@ -48,13 +51,25 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
 
   const pendingOrdersCount = orders.filter((o) => o.status === 'pending').length;
 
-  const totalRecycled = collections.reduce((sum, c) => sum + c.weight, 0) / 1000;
-  const co2Saved = Math.round(totalRecycled * 158);
-  const waterSaved = Math.round(totalRecycled * 228);
-  const treesProtected = Math.round(totalRecycled * 1.5);
+  const totalRecycledKG = collections.reduce((sum, c) => sum + c.weight, 0);
+  const co2Saved = Math.round((totalRecycledKG / 1000) * 158);
+  const waterSaved = Math.round((totalRecycledKG / 1000) * 228);
+  const treesProtected = Math.round((totalRecycledKG / 1000) * 1.5);
 
   function toggleUserStatus(userId: string, current: 'active' | 'inactive') {
-    updateUserStatus({ userId, status: current === 'active' ? 'inactive' : 'active' });
+    setIsUpdatingUser((prev) => ({ ...prev, [userId]: true }));
+    setTimeout(() => {
+      updateUserStatus({ userId, status: current === 'active' ? 'inactive' : 'active' });
+      setIsUpdatingUser((prev) => ({ ...prev, [userId]: false }));
+    }, 600);
+  }
+
+  function handleApproveOrder(orderId: string) {
+    setIsApproving((prev) => ({ ...prev, [orderId]: true }));
+    setTimeout(() => {
+      updateOrderStatus({ orderId, status: 'confirmed' });
+      setIsApproving((prev) => ({ ...prev, [orderId]: false }));
+    }, 600);
   }
 
   if (currentTab === 'dashboard') {
@@ -65,60 +80,97 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
 
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>
-          الإدارة — CERCLY
-        </div>
+        {/* 1. Header is rendered by AppShell */}
+
+        {/* 2. Hero Summary Card (System Overview) */}
         <div className="hero-card">
-          <div className="hero-title">الأثر البيئي الإجمالي</div>
-          <div className="hero-val">{totalRecycled.toFixed(1)} طن</div>
-          <div className="hero-sub">
-            <span style={{ marginLeft: '12px' }}>🌳 {treesProtected} شجرة</span>
-            <span style={{ marginLeft: '12px' }}>💧 {waterSaved} ل</span>
-            <span>🌍 {co2Saved} كجم CO₂</span>
+          <div className="hero-title">إجمالي المواد المفروزة بالمنصة</div>
+          <div className="hero-val">{totalRecycledKG.toLocaleString()} كجم</div>
+          <div className="hero-sub">اجمع لأثر يدوم • الأثر البيئي الإجمالي متزايد</div>
+        </div>
+
+        {/* 3. KPI Cards - 2-column grid, centered metrics, units in KG */}
+        <div className="kpi-grid">
+          <div className="kpi-card">
+            <div className="kpi-metric">{partnerCount}</div>
+            <div className="kpi-label">فرد / مؤسسة</div>
+          </div>
+          <div className="kpi-card">
+            <div className="kpi-metric">{totalRecycledKG.toLocaleString()}</div>
+            <div className="kpi-label">كجم مجمع</div>
+          </div>
+          <div className="kpi-card">
+            <div className="kpi-metric">{inventory.length}</div>
+            <div className="kpi-label">مراكز الفرز</div>
+          </div>
+          <div className="kpi-card">
+            <div className="kpi-metric">{factoryCount}</div>
+            <div className="kpi-label">مصانع تدوير</div>
           </div>
         </div>
-        <div className="stats">
-          <div className="stat-card">          <div className="stat-val">{partnerCount}</div><div className="stat-label">فرد / مؤسسة مسجل</div><div className="stat-change">↑ {partnerCount > 0 ? Math.round(partnerCount * 2.5) : 0}%</div></div>
-          <div className="stat-card"><div className="stat-val">{totalRecycled.toFixed(1)} طن</div><div className="stat-label">إجمالي التدوير</div></div>
-          <div className="stat-card"><div className="stat-val">{inventory.length}</div><div className="stat-label">مركز فرز</div></div>
-          <div className="stat-card">          <div className="stat-val">{factoryCount}</div><div className="stat-label">مصانع تدوير</div></div>
+
+        {/* Warnings alert */}
+        {pendingOrdersCount > 0 && (
+          <div className="alert warning">
+            <AlertTriangle size={16} />
+            <span>يوجد {pendingOrdersCount} طلب شراء معلق بانتظار الموافقة</span>
+          </div>
+        )}
+
+        {/* 4. Primary Actions */}
+        <div className="btn-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--gap-button)' }}>
+          <button className="btn-primary" onClick={() => {}} style={{ width: '100%', pointerEvents: 'none', opacity: 0.9 }}>
+            <Users size={16} /> لوحة الإدارة العامة
+          </button>
+          <button className="btn-secondary" onClick={() => {}} style={{ width: '100%', pointerEvents: 'none', opacity: 0.9 }}>
+            <BarChart3 size={16} /> مؤشرات العمليات
+          </button>
         </div>
+
+        {/* 5. Main Content - Environmental Impact Cards in Correct Order */}
         <div className="card">
-          <div className="card-title" style={{ marginBottom: '10px' }}>حالة العمليات اليوم</div>
-          {[
-            { r: 'الجامعون', n: collectorCount, s: 'نشط' },
-            { r: 'مركز الفرز', n: sorterCount, s: 'نشط' },
-            { r: 'طلبات شراء', n: pendingOrdersCount, s: pendingOrdersCount > 0 ? 'معلق' : 'نشط' },
-            { r: 'شحنات اليوم', n: shipments.length, s: shipments.length > 0 ? 'جارٍ' : 'نشط' },
-          ].map((o, i) => (
-            <div className="order-row" key={i}>
-              <div className="order-avatar"><CircleDot size={18} /></div>
-              <div className="order-info"><div className="order-title">{o.r}</div></div>
-              <div style={{ fontSize: '16px', fontWeight: 500, color: 'var(--green-mid)', marginRight: '8px' }}>{o.n}</div>
-              <span className={`badge ${o.s === 'نشط' ? 'badge-green' : o.s === 'معلق' ? 'badge-orange' : 'badge-blue'}`}>{o.s}</span>
+          <div className="card-title">الأثر البيئي الإجمالي للمنصة</div>
+          <div className="impact-grid">
+            <div className="impact-card">
+              <span className="impact-icon">🌳</span>
+              <span className="impact-val">{treesProtected}</span>
+              <span className="impact-label">أشجار محمية</span>
             </div>
-          ))}
-        </div>
-        <div className="card">
-          <div className="card-title" style={{ marginBottom: '10px' }}>الأثر البيئي للمنصة</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-            <div className="stat-card" style={{ textAlign: 'center', padding: '12px' }}>
-              <Wind size={22} style={{ color: 'var(--green-mid)', marginBottom: '4px' }} />
-              <div style={{ fontSize: '16px', fontWeight: 500, color: 'var(--green-mid)' }}>{co2Saved} كجم</div>
-              <div className="text-sm">CO₂ مخفض</div>
+            <div className="impact-card">
+              <span className="impact-icon">💧</span>
+              <span className="impact-val">{waterSaved.toLocaleString()} ل</span>
+              <span className="impact-label">مياه موفرة</span>
             </div>
-            <div className="stat-card" style={{ textAlign: 'center', padding: '12px' }}>
-              <Droplets size={22} style={{ color: 'var(--green-mid)', marginBottom: '4px' }} />
-              <div style={{ fontSize: '16px', fontWeight: 500, color: 'var(--green-mid)' }}>{waterSaved.toLocaleString()} ل</div>
-              <div className="text-sm">مياه موفرة</div>
-            </div>
-            <div className="stat-card" style={{ textAlign: 'center', padding: '12px' }}>
-              <TreePine size={22} style={{ color: 'var(--green-mid)', marginBottom: '4px' }} />
-              <div style={{ fontSize: '16px', fontWeight: 500, color: 'var(--green-mid)' }}>{treesProtected}</div>
-              <div className="text-sm">أشجار محمية</div>
+            <div className="impact-card">
+              <span className="impact-icon">☁️</span>
+              <span className="impact-val">{co2Saved} كجم</span>
+              <span className="impact-label">انبعاثات CO₂ المخفضة</span>
             </div>
           </div>
         </div>
+
+        {/* 6. Recent Activity - Operations Status */}
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">حالة العمليات اليوم</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {[
+              { r: 'الجامعون', n: collectorCount, s: 'نشط' },
+              { r: 'مركز الفرز', n: sorterCount, s: 'نشط' },
+              { r: 'طلبات شراء معلقة', n: pendingOrdersCount, s: pendingOrdersCount > 0 ? 'معلق' : 'نشط' },
+              { r: 'شحنات اليوم', n: shipments.length, s: shipments.length > 0 ? 'جارٍ' : 'نشط' },
+            ].map((o, i) => (
+              <div className="order-row" key={i}>
+                <div className="order-avatar"><CircleDot size={18} /></div>
+                <div className="order-info"><div className="order-title">{o.r}</div></div>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--primary-green)', marginLeft: '12px' }}>{o.n}</div>
+                <span className={`badge ${o.s === 'نشط' ? 'badge-green' : o.s === 'معلق' ? 'badge-orange' : 'badge-blue'}`}>{o.s}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <Chart />
       </>
     );
@@ -127,12 +179,9 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
   if (currentTab === 'users') {
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>
-          <Users size={18} style={{ verticalAlign: 'middle', marginLeft: '8px' }} />
-          إدارة المستخدمين
-        </div>
+        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>إدارة مستخدمي المنصة</div>
         <div className="card" style={{ padding: '10px' }}>
-          <input className="inp" placeholder="بحث عن مستخدم..." style={{ marginBottom: 0 }} value={userSearch} onChange={(e) => setUserSearch(e.target.value)} />
+          <input className="inp" placeholder="بحث عن اسم مستخدم..." style={{ height: '46px' }} value={userSearch} onChange={(e) => setUserSearch(e.target.value)} />
         </div>
         <div className="tabs">
           {[
@@ -146,34 +195,37 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
             </button>
           ))}
         </div>
-        {filteredUsers.map((u) => (
-          <div className="card" style={{ marginBottom: '8px' }} key={u.id}>
-            <div className="flex-between">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--green-50)', color: 'var(--green-mid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 500 }}>
-                  {u.name.slice(0, 2)}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {filteredUsers.map((u) => (
+            <div className="card" style={{ padding: '14px' }} key={u.id}>
+              <div className="flex-between">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--light-green)', color: 'var(--primary-green)', display: 'flex', alignItems: 'center', justifyCenter: 'center', fontSize: '13px', fontWeight: 700, justifyContent: 'center' }}>
+                    {u.name.slice(0, 2)}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)' }}>{u.name}</div>
+                    <div className="text-sm">{config.roleNames[u.role]}</div>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 500 }}>{u.name}</div>
-                  <div className="text-sm">{config.roleNames[u.role]}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className={`badge ${u.status === 'active' ? 'badge-green' : 'badge-orange'}`}>
+                    {u.status === 'active' ? 'نشط' : 'معلق'}
+                  </span>
+                  <button className="btn-secondary" style={{ minHeight: '38px', borderRadius: '12px', padding: '6px 12px', fontSize: '11px' }} onClick={() => toggleUserStatus(u.id, u.status)} disabled={!!isUpdatingUser[u.id]}>
+                    {isUpdatingUser[u.id] ? '...' : u.status === 'active' ? 'تعليق' : 'تفعيل'}
+                  </button>
                 </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className={`badge ${u.status === 'active' ? 'badge-green' : 'badge-orange'}`}>
-                  {u.status === 'active' ? 'نشط' : 'معلق'}
-                </span>
-                <button className="btn-sm" onClick={() => toggleUserStatus(u.id, u.status)}>
-                  {u.status === 'active' ? <X size={14} /> : <Check size={14} />}
-                </button>
               </div>
             </div>
-          </div>
-        ))}
-        {filteredUsers.length === 0 && (
-          <div className="card" style={{ textAlign: 'center', padding: '24px' }}>
-            <div className="text-sm">لا توجد نتائج للبحث</div>
-          </div>
-        )}
+          ))}
+          {filteredUsers.length === 0 && (
+            <div className="empty-state">
+              <span className="empty-icon" style={{ fontSize: '32px' }}>🔍</span>
+              <div className="empty-title">لا توجد نتائج للبحث</div>
+            </div>
+          )}
+        </div>
       </>
     );
   }
@@ -181,39 +233,46 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
   if (currentTab === 'operations') {
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>
-          <BarChart3 size={18} style={{ verticalAlign: 'middle', marginLeft: '8px' }} />
-          مراقبة العمليات
-        </div>
+        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>مراقبة العمليات اليومية</div>
         {pendingOrdersCount > 0 && (
-          <div className="alert warning"><AlertTriangle size={16} /> {pendingOrdersCount} طلبات شراء بانتظار الموافقة</div>
+          <div className="alert warning">
+            <AlertTriangle size={16} />
+            <span>توجد {pendingOrdersCount} طلبات شراء بانتظار الموافقة</span>
+          </div>
         )}
         <div className="card">
-          <div className="card-title" style={{ marginBottom: '10px' }}>طلبات شراء معلقة</div>
+          <div className="card-header">
+            <span className="card-title">طلبات شراء معلقة</span>
+          </div>
           {orders.filter((o) => o.status === 'pending').map((o) => (
             <div className="order-row" key={o.id}>
-              <div className="order-avatar"><AlertCircle size={18} style={{ color: 'var(--orange)' }} /></div>
+              <div className="order-avatar"><AlertCircle size={18} style={{ color: 'var(--pending)' }} /></div>
               <div className="order-info">
                 <div className="order-title">{o.id} — {o.materialName}</div>
                 <div className="order-sub">{o.factoryName} ← {o.centerName} • {o.quantity.toLocaleString()} كجم</div>
               </div>
-              <button className="btn-sm primary" style={{ fontSize: '11px' }} onClick={() => updateOrderStatus({ orderId: o.id, status: 'confirmed' })}>
-                موافقة مطلوبة
+              <button className="btn-primary" style={{ minHeight: '38px', borderRadius: '12px', fontSize: '11px', padding: '6px 12px' }} onClick={() => handleApproveOrder(o.id)} disabled={!!isApproving[o.id]}>
+                {isApproving[o.id] ? 'جاري...' : 'موافقة'}
               </button>
             </div>
           ))}
           {pendingOrdersCount === 0 && (
-            <div className="text-sm" style={{ textAlign: 'center', padding: '12px' }}>لا توجد طلبات معلقة</div>
+            <div className="empty-state">
+              <span className="empty-icon" style={{ fontSize: '32px' }}>📄</span>
+              <div className="empty-title">لا توجد طلبات معلقة</div>
+            </div>
           )}
         </div>
         <div className="card">
-          <div className="card-title" style={{ marginBottom: '10px' }}>المكافآت المتاحة ({rewards.length})</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <div className="card-header">
+            <span className="card-title">المكافآت المتاحة بالمنصة ({rewards.length})</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             {rewards.map((r) => (
-              <div className="stat-card" style={{ textAlign: 'center', padding: '10px' }} key={r.id}>
-                <Gift size={18} style={{ color: 'var(--orange)', marginBottom: '4px' }} />
-                <div style={{ fontSize: '12px', fontWeight: 500 }}>{r.name}</div>
-                <div className="text-sm">{r.pointsCost} نقطة</div>
+              <div className="kpi-card" style={{ padding: '12px 6px', minHeight: '90px', gap: '4px' }} key={r.id}>
+                <Gift size={20} style={{ color: 'var(--gold)' }} />
+                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-dark)' }}>{r.name}</div>
+                <div className="text-sm" style={{ fontWeight: 600, color: 'var(--gold)' }}>{r.pointsCost} نقطة</div>
               </div>
             ))}
           </div>
@@ -225,14 +284,11 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
   if (currentTab === 'reports') {
     return (
       <>
-        <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '14px' }}>
-          <Map size={18} style={{ verticalAlign: 'middle', marginLeft: '8px' }} />
-          خريطة المواقع وتتبع الشاحنات
-        </div>
+        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>مواقع التدوير والشاحنات</div>
         <div className="card" style={{ padding: '8px' }}>
           <Suspense fallback={
-            <div style={{ height: '320px', borderRadius: 'var(--radius)', background: 'linear-gradient(160deg,#dcecd4,#eef6e8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)', fontSize: '13px' }}>
-              جاري تحميل خريطة المواقع...
+            <div style={{ height: '320px', borderRadius: 'var(--radius-card)', background: 'linear-gradient(90deg, #EBE8E0 25%, #F5F3EE 50%, #EBE8E0 75%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dark)', fontSize: '13px' }}>
+              جاري تحميل الخريطة...
             </div>
           }>
             <PartnerMapView companies={recyclingCompanies} trucks={trucks} center={centerForMap} />
@@ -241,53 +297,57 @@ export default function AdminViews({ currentTab }: AdminViewsProps) {
 
         <div className="card">
           <div className="card-header">
-            <span className="card-title"><Truck size={16} style={{ verticalAlign: 'middle', marginLeft: '6px' }} />تتبع الشاحنات</span>
+            <span className="card-title">تتبع الشاحنات النشطة</span>
           </div>
-          {trucks.map((truck, i) => {
-            const locations = ['علي منجلي', 'الخروب', 'قسنطينة وسط'];
-            return (
-              <div className="order-row" key={truck.id}>
-                <div className="order-avatar" style={{ background: '#fff3e0', color: 'var(--orange)' }}>
-                  🚛
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {trucks.map((truck, i) => {
+              const locations = ['علي منجلي', 'الخروب', 'قسنطينة وسط'];
+              return (
+                <div className="order-row" key={truck.id}>
+                  <div className="order-avatar" style={{ background: '#FFFDF6', color: 'var(--gold)' }}>
+                    🚛
+                  </div>
+                  <div className="order-info">
+                    <div className="order-title">{truck.name}</div>
+                    <div className="order-sub">الموقع: {locations[i] || 'غير معروف'}</div>
+                  </div>
+                  <span className={`badge ${truck.status === 'loading' ? 'badge-orange' : truck.status === 'en_route' ? 'badge-blue' : 'badge-green'}`}>
+                    {truck.status === 'loading' ? 'تحميل' : truck.status === 'en_route' ? 'في الطريق' : 'تم التسليم'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">شركاء إعادة التدوير</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {recyclingCompanies.map((c) => (
+              <div className="order-row" key={c.id}>
+                <div className="order-avatar" style={{ background: 'var(--light-green)', color: 'var(--primary-green)' }}>
+                  <Factory size={18} />
                 </div>
                 <div className="order-info">
-                  <div className="order-title">{truck.name}</div>
-                  <div className="order-sub">الموقع: {locations[i] || 'غير معروف'}</div>
+                  <div className="order-title">{c.name}</div>
+                  <div className="order-sub">{c.address} • التخصص: {c.specialty}</div>
                 </div>
-                <span className={`badge ${truck.status === 'loading' ? 'badge-orange' : truck.status === 'en_route' ? 'badge-blue' : 'badge-green'}`}>
-                  {truck.status === 'loading' ? 'تحميل' : truck.status === 'en_route' ? 'في الطريق' : 'تم التسليم'}
-                </span>
               </div>
-            );
-          })}
-        </div>
-
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title"><Factory size={16} style={{ verticalAlign: 'middle', marginLeft: '6px' }} />مواقع الشركات</span>
+            ))}
           </div>
-          {recyclingCompanies.map((c) => (
-            <div className="order-row" key={c.id}>
-              <div className="order-avatar" style={{ color: 'var(--orange)' }}>
-                <Factory size={18} />
-              </div>
-              <div className="order-info">
-                <div className="order-title">{c.name}</div>
-                <div className="order-sub">{c.address} • {c.specialty}</div>
-              </div>
-            </div>
-          ))}
         </div>
 
         <div className="card">
           <div className="card-header">
-            <span className="card-title"><Map size={16} style={{ verticalAlign: 'middle', marginLeft: '6px' }} />موقع مركز الفرز</span>
+            <span className="card-title">مركز فرز قسنطينة</span>
           </div>
           <div className="order-row">
-            <div className="order-avatar">♻</div>
+            <div className="order-avatar" style={{ background: 'var(--light-green)', color: 'var(--primary-green)' }}>♻</div>
             <div className="order-info">
-              <div className="order-title">مركز فرز قسنطينة</div>
-              <div className="order-sub">قسنطينة وسط</div>
+              <div className="order-title">مركز فرز قسنطينة الرئيسي</div>
+              <div className="order-sub">قسنطينة وسط — الجزائر</div>
             </div>
           </div>
         </div>
