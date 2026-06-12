@@ -25,7 +25,7 @@ interface SorterViewsProps {
   onSetTab: (tab: Tab) => void;
 }
 
-const materialTypeOptions: MaterialType[] = ['plastic', 'carton', 'battery', 'printer_cartridge', 'ink_cartridge'];
+const materialTypeOptions: MaterialType[] = ['plastic', 'carton', 'battery', 'printer_cartridge'];
 
 const factoryNames: Record<string, string> = {
   f1: 'شركة نوميديا للبلاستيك المعاد',

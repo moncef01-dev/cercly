@@ -6,7 +6,7 @@ export type MaterialType =
   | 'carton'
   | 'battery'
   | 'printer_cartridge'
-  | 'ink_cartridge';
+  ;
 export type OrderStatus = 'pending' | 'confirmed' | 'delivered';
 export type CollectionPointStatus = 'completed' | 'upcoming' | 'pending';
 export type ShipmentStatus = 'in_transit' | 'scheduled';

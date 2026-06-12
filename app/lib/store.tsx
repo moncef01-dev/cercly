@@ -78,7 +78,7 @@ export const useStore = create<AppStore>()(
                           ...item,
                           quantity: item.quantity + quantity,
                           lastReceived: quantity,
-                          lastReceivedLabel: `تم استلام ${quantity} ${item.materialId === 'printer_cartridge' || item.materialId === 'ink_cartridge' ? 'قطعة' : 'كجم'}`,
+                          lastReceivedLabel: `تم استلام ${quantity} ${item.materialId === 'printer_cartridge' ? 'قطعة' : 'كجم'}`,
                         }
                       : item,
                   ),

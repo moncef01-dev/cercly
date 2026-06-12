@@ -13,7 +13,7 @@ interface PartnerViewsProps {
   currentTab: Tab;
 }
 
-const allowedMaterials: MaterialType[] = ['plastic', 'carton', 'battery', 'printer_cartridge', 'ink_cartridge'];
+const allowedMaterials: MaterialType[] = ['plastic', 'carton', 'battery', 'printer_cartridge'];
 
 function calcPoints(materialId: MaterialType, weight: number, bottles: number): number {
   let points = 0;
@@ -40,11 +40,6 @@ function calcPoints(materialId: MaterialType, weight: number, bottles: number): 
     else if (count >= 5) points = 120;
     else points = 20 * count;
   } else if (materialId === 'printer_cartridge') {
-    const count = b > 0 ? b : w;
-    if (count >= 10) points = 700;
-    else if (count >= 5) points = 300;
-    else points = 50 * count;
-  } else if (materialId === 'ink_cartridge') {
     const count = b > 0 ? b : w;
     if (count >= 10) points = 700;
     else if (count >= 5) points = 300;

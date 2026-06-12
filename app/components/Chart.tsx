@@ -45,7 +45,6 @@ export default function Chart() {
       carton: 'var(--light-green)',
       battery: 'var(--gold)',
       printer_cartridge: 'var(--gold)',
-      ink_cartridge: 'var(--light-green)',
     };
 
     const materialDist = materials

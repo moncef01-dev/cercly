@@ -61,7 +61,7 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
     } else if (materialId === 'battery') {
       const count = b > 0 ? b : w;
       if (count >= 10) points = 300; else if (count >= 5) points = 120; else points = 20 * count;
-    } else if (materialId === 'printer_cartridge' || materialId === 'ink_cartridge') {
+    } else if (materialId === 'printer_cartridge') {
       const count = b > 0 ? b : w;
       if (count >= 10) points = 700; else if (count >= 5) points = 300; else points = 50 * count;
     }
@@ -383,7 +383,7 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
             <div className="form-row">
               <div className="form-label">المواد</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
-                {materials.filter((m) => m.id !== 'ink_cartridge').map((m) => (
+                {materials.map((m) => (
                   <label key={m.id} style={{
                     display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px',
                     border: `1.5px solid ${mapCollectMaterials.includes(m.id) ? 'var(--primary-green)' : 'var(--border)'}`,
@@ -469,7 +469,7 @@ export default function CollectorViews({ currentTab, onSetTab }: CollectorViewsP
           <div className="form-row">
             <div className="form-label">أنواع المواد المجمعة</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
-              {materials.filter((m) => m.id !== 'ink_cartridge').map((m) => (
+              {materials.map((m) => (
                 <label
                   key={m.id}
                   style={{

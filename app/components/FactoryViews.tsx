@@ -1,10 +1,20 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { useStore } from '../lib/store';
-import type { Tab, MaterialType } from '../lib/types';
-import { generateOrderId } from '../lib/data';
-import { Bell, Check, Send, Package, Clock, MapPin, Factory, FileText, Award } from 'lucide-react';
+import { useState, useMemo } from "react";
+import { useStore } from "../lib/store";
+import type { Tab, MaterialType } from "../lib/types";
+import { generateOrderId } from "../lib/data";
+import {
+  Bell,
+  Check,
+  Send,
+  Package,
+  Clock,
+  MapPin,
+  Factory,
+  FileText,
+  Award,
+} from "lucide-react";
 
 interface FactoryViewsProps {
   currentTab: Tab;
@@ -12,15 +22,18 @@ interface FactoryViewsProps {
 }
 
 const factoryNames: Record<string, string> = {
-  f1: 'شركة نوميديا للبلاستيك المعاد',
-  f2: 'شركة قسنطينة للكرتون الصناعي',
-  f3: 'شركة البطاريات الخضراء',
-  f4: 'مخبر خرطوشة بلس',
-  f5: 'مركز إنك ريسايكل',
-  f6: 'مصنع الأثر الدائم',
+  f1: "شركة نوميديا للبلاستيك المعاد",
+  f2: "شركة قسنطينة للكرتون الصناعي",
+  f3: "شركة البطاريات الخضراء",
+  f4: "مخبر خرطوشة بلس",
+  f5: "مركز إنك ريسايكل",
+  f6: "مصنع الأثر الدائم",
 };
 
-export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps) {
+export default function FactoryViews({
+  currentTab,
+  onSetTab,
+}: FactoryViewsProps) {
   const inventory = useStore((s) => s.inventory);
   const orders = useStore((s) => s.orders);
   const shipments = useStore((s) => s.shipments);
@@ -30,12 +43,12 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
   const addNotification = useStore((s) => s.addNotification);
   const materials = useStore((s) => s.materials);
 
-  const [orderCenter, setOrderCenter] = useState('sc1');
-  const [orderMaterial, setOrderMaterial] = useState<MaterialType>('plastic');
-  const [orderQty, setOrderQty] = useState('');
+  const [orderCenter, setOrderCenter] = useState("sc1");
+  const [orderMaterial, setOrderMaterial] = useState<MaterialType>("plastic");
+  const [orderQty, setOrderQty] = useState("");
   const [orderSent, setOrderSent] = useState(false);
-  const [orderError, setOrderError] = useState('');
-  const [selectedFactory, setSelectedFactory] = useState('f1');
+  const [orderError, setOrderError] = useState("");
+  const [selectedFactory, setSelectedFactory] = useState("f1");
   const [viewFactory, setViewFactory] = useState<string | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,18 +56,19 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
   // Payment modal states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [cardName, setCardName] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
+  const [cardName, setCardName] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  const factoryList = useMemo(() =>
-    ['f1', 'f2', 'f3', 'f4', 'f5', 'f6'].map((id) => ({
-      id,
-      name: factoryNames[id],
-      orders: orders.filter((o) => o.factoryId === id),
-    })),
+  const factoryList = useMemo(
+    () =>
+      ["f1", "f2", "f3", "f4", "f5", "f6"].map((id) => ({
+        id,
+        name: factoryNames[id],
+        orders: orders.filter((o) => o.factoryId === id),
+      })),
     [orders],
   );
 
@@ -66,10 +80,10 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
   }
 
   function handleCreateOrder() {
-    setOrderError('');
+    setOrderError("");
     const qty = parseInt(orderQty);
     if (!qty || qty <= 0) {
-      setOrderError('الرجاء إدخال كمية صالحة');
+      setOrderError("الرجاء إدخال كمية صالحة");
       return;
     }
 
@@ -84,7 +98,13 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
   }
 
   function handleConfirmPayment() {
-    if (!cardName.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvv.trim()) return;
+    if (
+      !cardName.trim() ||
+      !cardNumber.trim() ||
+      !cardExpiry.trim() ||
+      !cardCvv.trim()
+    )
+      return;
     setIsProcessingPayment(true);
 
     setTimeout(() => {
@@ -96,37 +116,41 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
       addOrder({
         id: orderId,
         factoryId: selectedFactory,
-        factoryName: factoryNames[selectedFactory] || 'مصنع الأمل',
+        factoryName: factoryNames[selectedFactory] || "مصنع الأمل",
         centerId: orderCenter,
-        centerName: center?.centerName ?? '',
+        centerName: center?.centerName ?? "",
         materialId: orderMaterial,
         materialName: mat?.name ?? orderMaterial,
         quantity: qty,
-        status: 'pending',
-        createdAt: 'اليوم',
+        status: "pending",
+        createdAt: "اليوم",
       });
 
-      deductInventory({ centerId: orderCenter, materialId: orderMaterial, quantity: qty });
+      deductInventory({
+        centerId: orderCenter,
+        materialId: orderMaterial,
+        quantity: qty,
+      });
 
       addNotification({
         id: `notif-${Date.now()}`,
-        icon: '📄',
-        title: 'طلب شراء جديد',
+        icon: "📄",
+        title: "طلب شراء جديد",
         text: `طلب شراء جديد ${orderId} من ${factoryNames[selectedFactory]} — ${mat?.name} ${qty} كجم`,
-        time: 'الآن',
+        time: "الآن",
         isNew: true,
-        type: 'warning',
-        role: 'factory',
+        type: "warning",
+        role: "factory",
       });
 
       setIsProcessingPayment(false);
       setShowPaymentModal(false);
       setShowSuccessModal(true);
-      setCardName('');
-      setCardNumber('');
-      setCardExpiry('');
-      setCardCvv('');
-      setOrderQty('');
+      setCardName("");
+      setCardNumber("");
+      setCardExpiry("");
+      setCardCvv("");
+      setOrderQty("");
       setIsSubmitting(false);
     }, 1200);
   }
@@ -141,65 +165,136 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
     return invoices.find((inv) => inv.orderId === orderId);
   }
 
-  if (currentTab === 'dashboard') {
-    const pendingOrders = orders.filter((o) => o.status === 'pending').length;
-    const activeOrders = orders.filter((o) => o.status !== 'delivered').length;
+  if (currentTab === "dashboard") {
+    const pendingOrders = orders.filter((o) => o.status === "pending").length;
+    const activeOrders = orders.filter((o) => o.status !== "delivered").length;
     const completedInvoices = invoices.filter((inv) => inv.completed).length;
     const totalOrders = orders.length;
 
     // Factory summary: Total quantity purchased
     const totalPurchasedQty = orders
-      .filter((o) => o.status === 'confirmed' || o.status === 'delivered')
+      .filter((o) => o.status === "confirmed" || o.status === "delivered")
       .reduce((s, o) => s + o.quantity, 0);
 
     if (viewFactory) {
       const factoryOrders = orders.filter((o) => o.factoryId === viewFactory);
-      const companyName = factoryNames[viewFactory] || 'مصنع التدوير';
+      const companyName = factoryNames[viewFactory] || "مصنع التدوير";
       return (
         <>
-          <div className="flex-between" style={{ marginBottom: '14px' }}>
-            <button className="btn-secondary" style={{ minHeight: '40px', borderRadius: '12px', padding: '6px 14px' }} onClick={() => setViewFactory(null)}>← العودة</button>
+          <div className="flex-between" style={{ marginBottom: "14px" }}>
+            <button
+              className="btn-secondary"
+              style={{
+                minHeight: "40px",
+                borderRadius: "12px",
+                padding: "6px 14px",
+              }}
+              onClick={() => setViewFactory(null)}
+            >
+              ← العودة
+            </button>
             <span className="badge badge-green">{companyName}</span>
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px', color: 'var(--text-dark)' }}>
-            <Factory size={20} style={{ verticalAlign: 'middle', marginLeft: '8px', color: 'var(--primary-green)' }} />
+          <div
+            style={{
+              fontSize: "20px",
+              fontWeight: 700,
+              marginBottom: "12px",
+              color: "var(--text-dark)",
+            }}
+          >
+            <Factory
+              size={20}
+              style={{
+                verticalAlign: "middle",
+                marginLeft: "8px",
+                color: "var(--primary-green)",
+              }}
+            />
             {companyName}
           </div>
-          <div className="kpi-grid" style={{ marginBottom: '16px' }}>
+          <div className="kpi-grid" style={{ marginBottom: "16px" }}>
             <div className="kpi-card">
               <div className="kpi-metric">{factoryOrders.length}</div>
               <div className="kpi-label">الطلبات</div>
             </div>
             <div className="kpi-card">
-              <div className="kpi-metric">{factoryOrders.filter((o) => o.status === 'confirmed').length}</div>
+              <div className="kpi-metric">
+                {factoryOrders.filter((o) => o.status === "confirmed").length}
+              </div>
               <div className="kpi-label">معتمدة</div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+          >
             {factoryOrders.map((o) => {
               const invoice = getInvoiceForOrder(o.id);
               return (
                 <div className="card" key={o.id}>
                   <div className="flex-between">
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)' }}>طلب رقم: {o.id}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span className={`badge ${o.status === 'pending' ? 'badge-orange' : 'badge-green'}`}>
-                        {o.status === 'pending' ? 'معلق' : 'معتمد'}
+                    <span
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        color: "var(--text-dark)",
+                      }}
+                    >
+                      طلب رقم: {o.id}
+                    </span>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <span
+                        className={`badge ${o.status === "pending" ? "badge-orange" : "badge-green"}`}
+                      >
+                        {o.status === "pending" ? "معلق" : "معتمد"}
                       </span>
                     </div>
                   </div>
-                  <div className="text-sm" style={{ fontWeight: 600 }}>{o.materialName} — {o.quantity.toLocaleString()} كجم</div>
-                  <div className="text-sm" style={{ opacity: 0.6 }}>{o.createdAt}</div>
-                  
+                  <div className="text-sm" style={{ fontWeight: 600 }}>
+                    {o.materialName} — {o.quantity.toLocaleString()} كجم
+                  </div>
+                  <div className="text-sm" style={{ opacity: 0.6 }}>
+                    {o.createdAt}
+                  </div>
+
                   {invoice && (
-                    <div className="invoice-card" style={{ padding: '14px', border: '1.5px solid var(--gold)', gap: '10px' }}>
-                      <div className="flex-between" style={{ borderBottom: '1.5px dashed var(--surface)', paddingBottom: '6px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--gold)' }}>فاتورة: {invoice.invoiceNumber}</span>
+                    <div
+                      className="invoice-card"
+                      style={{
+                        padding: "14px",
+                        border: "1.5px solid var(--gold)",
+                        gap: "10px",
+                      }}
+                    >
+                      <div
+                        className="flex-between"
+                        style={{
+                          borderBottom: "1.5px dashed var(--surface)",
+                          paddingBottom: "6px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            color: "var(--gold)",
+                          }}
+                        >
+                          فاتورة: {invoice.invoiceNumber}
+                        </span>
                         <span className="text-sm">{invoice.date}</span>
                       </div>
                       <div className="flex-between">
-                        <span className="text-sm">المجموع: {invoice.totalPrice.toLocaleString()} د.ج</span>
+                        <span className="text-sm">
+                          المجموع: {invoice.totalPrice.toLocaleString()} د.ج
+                        </span>
                         <span className="badge badge-gold">✓ مكتمل</span>
                       </div>
                     </div>
@@ -216,43 +311,119 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
       <>
         {/* Payment Modal */}
         {showPaymentModal && (
-          <div style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
-          }}>
-            <div style={{
-              background: '#fff', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '360px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
-            }}>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '4px' }}>بيانات البطاقة البنكية</div>
-              <div className="text-sm" style={{ marginBottom: '20px', opacity: 0.6 }}>يرجى إدخال بيانات الدفع</div>
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              zIndex: 1000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "16px",
+            }}
+          >
+            <div
+              style={{
+                background: "#fff",
+                borderRadius: "20px",
+                padding: "24px",
+                width: "100%",
+                maxWidth: "360px",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  color: "var(--text-dark)",
+                  marginBottom: "4px",
+                }}
+              >
+                بيانات البطاقة البنكية
+              </div>
+              <div
+                className="text-sm"
+                style={{ marginBottom: "20px", opacity: 0.6 }}
+              >
+                يرجى إدخال بيانات الدفع
+              </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
                 <div className="form-row">
                   <div className="form-label">اسم حامل البطاقة</div>
-                  <input className="inp" type="text" placeholder="الاسم الكامل" value={cardName} onChange={(e) => setCardName(e.target.value)} />
+                  <input
+                    className="inp"
+                    type="text"
+                    placeholder="الاسم الكامل"
+                    value={cardName}
+                    onChange={(e) => setCardName(e.target.value)}
+                  />
                 </div>
                 <div className="form-row">
                   <div className="form-label">رقم البطاقة</div>
-                  <input className="inp" type="text" placeholder="0000 0000 0000 0000" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} maxLength={19} />
+                  <input
+                    className="inp"
+                    type="text"
+                    placeholder="0000 0000 0000 0000"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value)}
+                    maxLength={19}
+                  />
                 </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: "flex", gap: "12px" }}>
                   <div className="form-row" style={{ flex: 1 }}>
                     <div className="form-label">تاريخ الانتهاء</div>
-                    <input className="inp" type="text" placeholder="MM/YY" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} maxLength={5} />
+                    <input
+                      className="inp"
+                      type="text"
+                      placeholder="MM/YY"
+                      value={cardExpiry}
+                      onChange={(e) => setCardExpiry(e.target.value)}
+                      maxLength={5}
+                    />
                   </div>
                   <div className="form-row" style={{ flex: 1 }}>
                     <div className="form-label">CVV</div>
-                    <input className="inp" type="text" placeholder="123" value={cardCvv} onChange={(e) => setCardCvv(e.target.value)} maxLength={4} />
+                    <input
+                      className="inp"
+                      type="text"
+                      placeholder="123"
+                      value={cardCvv}
+                      onChange={(e) => setCardCvv(e.target.value)}
+                      maxLength={4}
+                    />
                   </div>
                 </div>
               </div>
 
-              <div className="btn-row" style={{ marginTop: '20px' }}>
-                <button className="btn-primary" style={{ flex: 1 }} onClick={handleConfirmPayment} disabled={isProcessingPayment || !cardName.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvv.trim()}>
-                  {isProcessingPayment ? 'جارٍ المعالجة...' : 'تأكيد الدفع'}
+              <div className="btn-row" style={{ marginTop: "20px" }}>
+                <button
+                  className="btn-primary"
+                  style={{ flex: 1 }}
+                  onClick={handleConfirmPayment}
+                  disabled={
+                    isProcessingPayment ||
+                    !cardName.trim() ||
+                    !cardNumber.trim() ||
+                    !cardExpiry.trim() ||
+                    !cardCvv.trim()
+                  }
+                >
+                  {isProcessingPayment ? "جارٍ المعالجة..." : "تأكيد الدفع"}
                 </button>
-                <button className="btn-secondary" onClick={() => setShowPaymentModal(false)} disabled={isProcessingPayment}>
+                <button
+                  className="btn-secondary"
+                  onClick={() => setShowPaymentModal(false)}
+                  disabled={isProcessingPayment}
+                >
                   إلغاء
                 </button>
               </div>
@@ -262,25 +433,67 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
 
         {/* Success Modal */}
         {showSuccessModal && (
-          <div style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
-          }}>
-            <div style={{
-              background: '#fff', borderRadius: '20px', padding: '32px 24px', width: '100%', maxWidth: '320px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.3)', textAlign: 'center'
-            }}>
-              <div style={{
-                width: '72px', height: '72px', borderRadius: '50%',
-                background: 'rgba(212,175,55,0.15)', border: '2px solid #D4AF37',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 16px', fontSize: '36px', color: '#D4AF37'
-              }}>
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              zIndex: 1000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "16px",
+            }}
+          >
+            <div
+              style={{
+                background: "#fff",
+                borderRadius: "20px",
+                padding: "32px 24px",
+                width: "100%",
+                maxWidth: "320px",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+                textAlign: "center",
+              }}
+            >
+              <div
+                style={{
+                  width: "72px",
+                  height: "72px",
+                  borderRadius: "50%",
+                  background: "rgba(212,175,55,0.15)",
+                  border: "2px solid #D4AF37",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 16px",
+                  fontSize: "36px",
+                  color: "#D4AF37",
+                }}
+              >
                 ✓
               </div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px' }}>تمت العملية بنجاح</div>
-              <div className="text-sm" style={{ marginBottom: '24px', opacity: 0.7 }}>تم إرسال طلب الشراء</div>
-              <button className="btn-primary" style={{ width: '100%' }} onClick={handleCloseSuccess}>
+              <div
+                style={{
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  color: "var(--text-dark)",
+                  marginBottom: "8px",
+                }}
+              >
+                تمت العملية بنجاح
+              </div>
+              <div
+                className="text-sm"
+                style={{ marginBottom: "24px", opacity: 0.7 }}
+              >
+                تم إرسال طلب الشراء
+              </div>
+              <button
+                className="btn-primary"
+                style={{ width: "100%" }}
+                onClick={handleCloseSuccess}
+              >
                 حسناً
               </button>
             </div>
@@ -292,7 +505,9 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
         {/* 2. Hero Summary Card (Purchase Summary) */}
         <div className="hero-card">
           <div className="hero-title">إجمالي المشتريات المعتمدة</div>
-          <div className="hero-val">{totalPurchasedQty.toLocaleString()} كجم</div>
+          <div className="hero-val">
+            {totalPurchasedQty.toLocaleString()} كجم
+          </div>
           <div className="hero-sub">مواد قابلة للتدوير تم شراؤها</div>
         </div>
 
@@ -307,11 +522,15 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
             <div className="kpi-label">طلبات نشطة</div>
           </div>
           <div className="kpi-card">
-            <div className="kpi-metric" style={{ color: 'var(--gold)' }}>{completedInvoices}</div>
+            <div className="kpi-metric" style={{ color: "var(--gold)" }}>
+              {completedInvoices}
+            </div>
             <div className="kpi-label">فواتير مكتملة</div>
           </div>
           <div className="kpi-card">
-            <div className="kpi-metric">{shipments.filter((s) => s.status === 'in_transit').length}</div>
+            <div className="kpi-metric">
+              {shipments.filter((s) => s.status === "in_transit").length}
+            </div>
             <div className="kpi-label">شحنات في الطريق</div>
           </div>
         </div>
@@ -326,7 +545,11 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
 
         {/* 4. Primary Actions */}
         <div className="btn-row">
-          <button className="btn-primary" onClick={() => onSetTab?.('orders')} style={{ width: '100%' }}>
+          <button
+            className="btn-primary"
+            onClick={() => onSetTab?.("orders")}
+            style={{ width: "100%" }}
+          >
             + إنشاء طلب شراء جديد
           </button>
         </div>
@@ -335,21 +558,48 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
         <div className="card">
           <div className="card-header">
             <span className="card-title">المواد المتاحة للطلب</span>
-            <span className="live-badge"><span className="live-dot"></span>مباشر</span>
+            <span className="live-badge">
+              <span className="live-dot"></span>مباشر
+            </span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
             {inventory[0].items.map((item) => {
               const mat = materials.find((m) => m.id === item.materialId);
               return (
                 <div className="mat-row" key={item.materialId}>
-                  <div className="mat-icon">{mat?.icon ?? '📦'}</div>
+                  <div className="mat-icon">{mat?.icon ?? "📦"}</div>
                   <div className="mat-info">
-                    <div className="mat-name">{mat?.name ?? item.materialId}</div>
+                    <div className="mat-name">
+                      {mat?.name ?? item.materialId}
+                    </div>
                     <div className="mat-qty">{inventory[0].centerName}</div>
                   </div>
-                  <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                    <div className="mat-val">{item.quantity.toLocaleString()} كجم</div>
-                    <button className="btn-primary" style={{ minHeight: '34px', borderRadius: '10px', fontSize: '11px', padding: '4px 10px' }} onClick={() => { setOrderMaterial(item.materialId); setOrderCenter('sc1'); onSetTab?.('orders'); }}>
+                  <div
+                    style={{
+                      textAlign: "left",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                      gap: "4px",
+                    }}
+                  >
+                    <div className="mat-val">
+                      {item.quantity.toLocaleString()} كجم
+                    </div>
+                    <button
+                      className="btn-primary"
+                      style={{
+                        minHeight: "34px",
+                        borderRadius: "10px",
+                        fontSize: "11px",
+                        padding: "4px 10px",
+                      }}
+                      onClick={() => {
+                        setOrderMaterial(item.materialId);
+                        setOrderCenter("sc1");
+                        onSetTab?.("orders");
+                      }}
+                    >
                       طلب
                     </button>
                   </div>
@@ -362,10 +612,19 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
     );
   }
 
-  if (currentTab === 'available') {
+  if (currentTab === "available") {
     return (
       <>
-        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>المخزون المتاح للطلب</div>
+        <div
+          style={{
+            fontSize: "20px",
+            fontWeight: 700,
+            marginBottom: "4px",
+            color: "var(--text-dark)",
+          }}
+        >
+          المخزون المتاح للطلب
+        </div>
         <div className="alert success">
           <Check size={16} />
           <span>البيانات محدثة في الوقت الفعلي</span>
@@ -376,13 +635,19 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
               <span className="card-title">{c.centerName}</span>
               <span className="badge badge-green">{c.location}</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
               {c.items.map((item) => {
                 const mat = materials.find((m) => m.id === item.materialId);
                 return (
                   <div className="mat-row" key={item.materialId}>
-                    <div className="mat-info"><div className="mat-name">{mat?.name ?? item.materialId}</div></div>
-                    <div className="mat-val">{item.quantity.toLocaleString()} كجم</div>
+                    <div className="mat-info">
+                      <div className="mat-name">
+                        {mat?.name ?? item.materialId}
+                      </div>
+                    </div>
+                    <div className="mat-val">
+                      {item.quantity.toLocaleString()} كجم
+                    </div>
                     <span className="badge badge-green">متاح</span>
                   </div>
                 );
@@ -394,21 +659,30 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
     );
   }
 
-  if (currentTab === 'orders') {
+  if (currentTab === "orders") {
     const statusBadge: Record<string, string> = {
-      pending: 'badge-orange',
-      confirmed: 'badge-green',
-      delivered: 'badge-blue',
+      pending: "badge-orange",
+      confirmed: "badge-green",
+      delivered: "badge-blue",
     };
     const statusLabels: Record<string, string> = {
-      pending: 'قيد الانتظار',
-      confirmed: 'تم التأكيد',
-      delivered: 'تم التسليم',
+      pending: "قيد الانتظار",
+      confirmed: "تم التأكيد",
+      delivered: "تم التسليم",
     };
 
     return (
       <>
-        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>طلبات الشراء والتعاقد</div>
+        <div
+          style={{
+            fontSize: "20px",
+            fontWeight: 700,
+            marginBottom: "4px",
+            color: "var(--text-dark)",
+          }}
+        >
+          طلبات الشراء والتعاقد
+        </div>
         {orderSent && (
           <div className="success-banner">
             <span className="success-icon">✓</span>
@@ -418,43 +692,119 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
 
         {/* Payment Modal in orders tab */}
         {showPaymentModal && (
-          <div style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
-          }}>
-            <div style={{
-              background: '#fff', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '360px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
-            }}>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '4px' }}>بيانات البطاقة البنكية</div>
-              <div className="text-sm" style={{ marginBottom: '20px', opacity: 0.6 }}>يرجى إدخال بيانات الدفع</div>
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              zIndex: 1000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "16px",
+            }}
+          >
+            <div
+              style={{
+                background: "#fff",
+                borderRadius: "20px",
+                padding: "24px",
+                width: "100%",
+                maxWidth: "360px",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  color: "var(--text-dark)",
+                  marginBottom: "4px",
+                }}
+              >
+                بيانات البطاقة البنكية
+              </div>
+              <div
+                className="text-sm"
+                style={{ marginBottom: "20px", opacity: 0.6 }}
+              >
+                يرجى إدخال بيانات الدفع
+              </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
                 <div className="form-row">
                   <div className="form-label">اسم حامل البطاقة</div>
-                  <input className="inp" type="text" placeholder="الاسم الكامل" value={cardName} onChange={(e) => setCardName(e.target.value)} />
+                  <input
+                    className="inp"
+                    type="text"
+                    placeholder="الاسم الكامل"
+                    value={cardName}
+                    onChange={(e) => setCardName(e.target.value)}
+                  />
                 </div>
                 <div className="form-row">
                   <div className="form-label">رقم البطاقة</div>
-                  <input className="inp" type="text" placeholder="0000 0000 0000 0000" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} maxLength={19} />
+                  <input
+                    className="inp"
+                    type="text"
+                    placeholder="0000 0000 0000 0000"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value)}
+                    maxLength={19}
+                  />
                 </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: "flex", gap: "12px" }}>
                   <div className="form-row" style={{ flex: 1 }}>
                     <div className="form-label">تاريخ الانتهاء</div>
-                    <input className="inp" type="text" placeholder="MM/YY" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} maxLength={5} />
+                    <input
+                      className="inp"
+                      type="text"
+                      placeholder="MM/YY"
+                      value={cardExpiry}
+                      onChange={(e) => setCardExpiry(e.target.value)}
+                      maxLength={5}
+                    />
                   </div>
                   <div className="form-row" style={{ flex: 1 }}>
                     <div className="form-label">CVV</div>
-                    <input className="inp" type="text" placeholder="123" value={cardCvv} onChange={(e) => setCardCvv(e.target.value)} maxLength={4} />
+                    <input
+                      className="inp"
+                      type="text"
+                      placeholder="123"
+                      value={cardCvv}
+                      onChange={(e) => setCardCvv(e.target.value)}
+                      maxLength={4}
+                    />
                   </div>
                 </div>
               </div>
 
-              <div className="btn-row" style={{ marginTop: '20px' }}>
-                <button className="btn-primary" style={{ flex: 1 }} onClick={handleConfirmPayment} disabled={isProcessingPayment || !cardName.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvv.trim()}>
-                  {isProcessingPayment ? 'جارٍ المعالجة...' : 'تأكيد الدفع'}
+              <div className="btn-row" style={{ marginTop: "20px" }}>
+                <button
+                  className="btn-primary"
+                  style={{ flex: 1 }}
+                  onClick={handleConfirmPayment}
+                  disabled={
+                    isProcessingPayment ||
+                    !cardName.trim() ||
+                    !cardNumber.trim() ||
+                    !cardExpiry.trim() ||
+                    !cardCvv.trim()
+                  }
+                >
+                  {isProcessingPayment ? "جارٍ المعالجة..." : "تأكيد الدفع"}
                 </button>
-                <button className="btn-secondary" onClick={() => setShowPaymentModal(false)} disabled={isProcessingPayment}>
+                <button
+                  className="btn-secondary"
+                  onClick={() => setShowPaymentModal(false)}
+                  disabled={isProcessingPayment}
+                >
                   إلغاء
                 </button>
               </div>
@@ -464,73 +814,154 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
 
         {/* Success Modal in orders tab */}
         {showSuccessModal && (
-          <div style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
-          }}>
-            <div style={{
-              background: '#fff', borderRadius: '20px', padding: '32px 24px', width: '100%', maxWidth: '320px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.3)', textAlign: 'center'
-            }}>
-              <div style={{
-                width: '72px', height: '72px', borderRadius: '50%',
-                background: 'rgba(212,175,55,0.15)', border: '2px solid #D4AF37',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 16px', fontSize: '36px', color: '#D4AF37'
-              }}>
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              zIndex: 1000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "16px",
+            }}
+          >
+            <div
+              style={{
+                background: "#fff",
+                borderRadius: "20px",
+                padding: "32px 24px",
+                width: "100%",
+                maxWidth: "320px",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+                textAlign: "center",
+              }}
+            >
+              <div
+                style={{
+                  width: "72px",
+                  height: "72px",
+                  borderRadius: "50%",
+                  background: "rgba(212,175,55,0.15)",
+                  border: "2px solid #D4AF37",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 16px",
+                  fontSize: "36px",
+                  color: "#D4AF37",
+                }}
+              >
                 ✓
               </div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px' }}>تمت العملية بنجاح</div>
-              <div className="text-sm" style={{ marginBottom: '24px', opacity: 0.7 }}>تم إرسال طلب الشراء</div>
-              <button className="btn-primary" style={{ width: '100%' }} onClick={handleCloseSuccess}>
+              <div
+                style={{
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  color: "var(--text-dark)",
+                  marginBottom: "8px",
+                }}
+              >
+                تمت العملية بنجاح
+              </div>
+              <div
+                className="text-sm"
+                style={{ marginBottom: "24px", opacity: 0.7 }}
+              >
+                تم إرسال طلب الشراء
+              </div>
+              <button
+                className="btn-primary"
+                style={{ width: "100%" }}
+                onClick={handleCloseSuccess}
+              >
                 حسناً
               </button>
             </div>
           </div>
         )}
-        
+
         {/* Create Order form */}
         <div className="card">
           <div className="card-title">إنشاء طلب شراء جديد</div>
           <div className="form-row">
             <div className="form-label">الشركة المشتري</div>
-            <select className="form-select" value={selectedFactory} onChange={(e) => setSelectedFactory(e.target.value)}>
+            <select
+              className="form-select"
+              value={selectedFactory}
+              onChange={(e) => setSelectedFactory(e.target.value)}
+            >
               {Object.entries(factoryNames).map(([id, name]) => (
-                <option key={id} value={id}>{name}</option>
+                <option key={id} value={id}>
+                  {name}
+                </option>
               ))}
             </select>
           </div>
           <div className="form-row">
             <div className="form-label">مركز الفرز المصدر</div>
-            <select className="form-select" value={orderCenter} onChange={(e) => setOrderCenter(e.target.value)}>
+            <select
+              className="form-select"
+              value={orderCenter}
+              onChange={(e) => setOrderCenter(e.target.value)}
+            >
               {inventory.map((c) => (
-                <option key={c.centerId} value={c.centerId}>{c.centerName}</option>
+                <option key={c.centerId} value={c.centerId}>
+                  {c.centerName}
+                </option>
               ))}
             </select>
           </div>
           <div className="form-row">
             <div className="form-label">نوع المادة</div>
-            <select className="form-select" value={orderMaterial} onChange={(e) => setOrderMaterial(e.target.value as MaterialType)}>
+            <select
+              className="form-select"
+              value={orderMaterial}
+              onChange={(e) => setOrderMaterial(e.target.value as MaterialType)}
+            >
               {materials.map((m) => (
-                <option key={m.id} value={m.id}>{m.name}</option>
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
               ))}
             </select>
           </div>
           <div className="form-row">
             <div className="form-label">الكمية المطلوبة (كجم)</div>
-            <input className="inp" type="number" placeholder="أدخل الكمية المطلوبة بالكجم" value={orderQty} onChange={(e) => { setOrderQty(e.target.value); setOrderError(''); }} />
+            <input
+              className="inp"
+              type="number"
+              placeholder="أدخل الكمية المطلوبة بالكجم"
+              value={orderQty}
+              onChange={(e) => {
+                setOrderQty(e.target.value);
+                setOrderError("");
+              }}
+            />
           </div>
-          <div className="text-sm" style={{ marginBottom: '8px', fontWeight: 600 }}>
-            الكمية المتوفرة حالياً: {getAvailableQty(orderCenter, orderMaterial).toLocaleString()} كجم
+          <div
+            className="text-sm"
+            style={{ marginBottom: "8px", fontWeight: 600 }}
+          >
+            الكمية المتوفرة حالياً:{" "}
+            {getAvailableQty(orderCenter, orderMaterial).toLocaleString()} كجم
           </div>
           {orderError && (
-            <div className="alert danger" style={{ padding: '10px', fontSize: '13px', marginBottom: '8px' }}>
+            <div
+              className="alert danger"
+              style={{ padding: "10px", fontSize: "13px", marginBottom: "8px" }}
+            >
               {orderError}
             </div>
           )}
-          <div className="btn-row" style={{ marginTop: '6px' }}>
-            <button className="btn-primary" style={{ flex: 1 }} onClick={handleCreateOrder} disabled={isSubmitting}>
-              {isSubmitting ? 'جارٍ المعالجة...' : 'إرسال طلب الشراء'}
+          <div className="btn-row" style={{ marginTop: "6px" }}>
+            <button
+              className="btn-primary"
+              style={{ flex: 1 }}
+              onClick={handleCreateOrder}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "جارٍ المعالجة..." : "إرسال طلب الشراء"}
             </button>
           </div>
         </div>
@@ -540,29 +971,53 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
           <div className="card-title">سجل الطلبات والفواتير</div>
           {orders.length === 0 ? (
             <div className="empty-state">
-              <span className="empty-icon" style={{ fontSize: '32px' }}>📄</span>
+              <span className="empty-icon" style={{ fontSize: "32px" }}>
+                📄
+              </span>
               <div className="empty-title">لا توجد طلبات شراء حالياً</div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
               {orders.map((o) => {
                 const invoice = getInvoiceForOrder(o.id);
                 return (
                   <div className="order-row" key={o.id}>
-                    <div className="order-avatar"><FileText size={18} /></div>
+                    <div className="order-avatar">
+                      <FileText size={18} />
+                    </div>
                     <div className="order-info">
-                      <div className="order-title">{o.id} — {o.materialName}</div>
-                      <div className="order-sub">{o.factoryName} • {o.quantity.toLocaleString()} كجم • {o.createdAt}</div>
+                      <div className="order-title">
+                        {o.id} — {o.materialName}
+                      </div>
+                      <div className="order-sub">
+                        {o.factoryName} • {o.quantity.toLocaleString()} كجم •{" "}
+                        {o.createdAt}
+                      </div>
                       {invoice && (
-                        <div className="order-sub" style={{ color: 'var(--gold)', fontWeight: 700 }}>
-                          فاتورة: {invoice.invoiceNumber} — {invoice.totalPrice.toLocaleString()} د.ج
+                        <div
+                          className="order-sub"
+                          style={{ color: "var(--gold)", fontWeight: 700 }}
+                        >
+                          فاتورة: {invoice.invoiceNumber} —{" "}
+                          {invoice.totalPrice.toLocaleString()} د.ج
                         </div>
                       )}
                     </div>
                     <div className="order-right">
-                      <span className={`badge ${statusBadge[o.status]}`}>{statusLabels[o.status]}</span>
+                      <span className={`badge ${statusBadge[o.status]}`}>
+                        {statusLabels[o.status]}
+                      </span>
                       {invoice?.completed && (
-                        <span style={{ fontSize: '16px', color: 'var(--gold)', fontWeight: 700, marginTop: '2px' }}>✓</span>
+                        <span
+                          style={{
+                            fontSize: "16px",
+                            color: "var(--gold)",
+                            fontWeight: 700,
+                            marginTop: "2px",
+                          }}
+                        >
+                          ✓
+                        </span>
                       )}
                     </div>
                   </div>
@@ -575,33 +1030,80 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
     );
   }
 
-  if (currentTab === 'shipments') {
+  if (currentTab === "shipments") {
     return (
       <>
-        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>الشحنات الصادرة</div>
+        <div
+          style={{
+            fontSize: "20px",
+            fontWeight: 700,
+            marginBottom: "4px",
+            color: "var(--text-dark)",
+          }}
+        >
+          الشحنات الصادرة
+        </div>
         {shipments.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-icon" style={{ fontSize: '32px' }}>🚛</span>
+            <span className="empty-icon" style={{ fontSize: "32px" }}>
+              🏍️
+            </span>
             <div className="empty-title">لا توجد شحنات واردة</div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+          >
             {shipments.map((s) => (
               <div className="card" key={s.id}>
                 <div className="flex-between">
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)' }}>شحنة رقم: {s.id}</span>
-                  <span className={`badge ${s.status === 'in_transit' ? 'badge-blue' : 'badge-orange'}`}>
-                    {s.status === 'in_transit' ? 'في الطريق' : 'مجدول'}
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      color: "var(--text-dark)",
+                    }}
+                  >
+                    شحنة رقم: {s.id}
+                  </span>
+                  <span
+                    className={`badge ${s.status === "in_transit" ? "badge-blue" : "badge-orange"}`}
+                  >
+                    {s.status === "in_transit" ? "في الطريق" : "مجدول"}
                   </span>
                 </div>
                 <div className="text-sm">
-                  <MapPin size={13} style={{ verticalAlign: 'middle', marginLeft: '6px', color: 'var(--primary-green)' }} /> من: {s.fromCenter}
+                  <MapPin
+                    size={13}
+                    style={{
+                      verticalAlign: "middle",
+                      marginLeft: "6px",
+                      color: "var(--primary-green)",
+                    }}
+                  />{" "}
+                  من: {s.fromCenter}
                 </div>
                 <div className="text-sm">
-                  <Package size={13} style={{ verticalAlign: 'middle', marginLeft: '6px', color: 'var(--primary-green)' }} /> {s.materialName} — {s.quantity.toLocaleString()} كجم
+                  <Package
+                    size={13}
+                    style={{
+                      verticalAlign: "middle",
+                      marginLeft: "6px",
+                      color: "var(--primary-green)",
+                    }}
+                  />{" "}
+                  {s.materialName} — {s.quantity.toLocaleString()} كجم
                 </div>
                 <div className="text-sm">
-                  <Clock size={13} style={{ verticalAlign: 'middle', marginLeft: '6px', color: 'var(--primary-green)' }} /> وصول متوقع: {s.eta}
+                  <Clock
+                    size={13}
+                    style={{
+                      verticalAlign: "middle",
+                      marginLeft: "6px",
+                      color: "var(--primary-green)",
+                    }}
+                  />{" "}
+                  وصول متوقع: {s.eta}
                 </div>
               </div>
             ))}
@@ -611,63 +1113,109 @@ export default function FactoryViews({ currentTab, onSetTab }: FactoryViewsProps
     );
   }
 
-  if (currentTab === 'invoices') {
+  if (currentTab === "invoices") {
     return (
       <>
-        <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-dark)' }}>الفواتير المالية</div>
+        <div
+          style={{
+            fontSize: "20px",
+            fontWeight: 700,
+            marginBottom: "4px",
+            color: "var(--text-dark)",
+          }}
+        >
+          الفواتير المالية
+        </div>
         {invoices.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-icon" style={{ fontSize: '32px' }}>📄</span>
+            <span className="empty-icon" style={{ fontSize: "32px" }}>
+              📄
+            </span>
             <div className="empty-title">لا توجد فواتير حالياً</div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+          >
             {invoices.map((inv) => (
               <div className="invoice-card" key={inv.id}>
                 <div className="invoice-header">
                   <span className="invoice-logo">♻ CERCLY</span>
                   <span className="invoice-title">فاتورة بيع مواد</span>
                 </div>
-                
+
                 <div className="invoice-details-grid">
                   <div className="invoice-detail-item">
                     <span className="invoice-detail-label">رقم الفاتورة</span>
-                    <span className="invoice-detail-val">{inv.invoiceNumber}</span>
+                    <span className="invoice-detail-val">
+                      {inv.invoiceNumber}
+                    </span>
                   </div>
                   <div className="invoice-detail-item">
                     <span className="invoice-detail-label">التاريخ</span>
                     <span className="invoice-detail-val">{inv.date}</span>
                   </div>
-                  <div className="invoice-detail-item" style={{ gridColumn: 'span 2' }}>
-                    <span className="invoice-detail-label">المشتري (مصنع التدوير)</span>
-                    <span className="invoice-detail-val">{inv.companyName}</span>
+                  <div
+                    className="invoice-detail-item"
+                    style={{ gridColumn: "span 2" }}
+                  >
+                    <span className="invoice-detail-label">
+                      المشتري (مصنع التدوير)
+                    </span>
+                    <span className="invoice-detail-val">
+                      {inv.companyName}
+                    </span>
                   </div>
                 </div>
 
                 <table className="invoice-items-table">
                   <thead>
                     <tr>
-                      <th className="invoice-th" style={{ width: '40%' }}>المادة</th>
-                      <th className="invoice-th" style={{ textAlign: 'center' }}>الكمية</th>
-                      <th className="invoice-th" style={{ textAlign: 'left' }}>سعر الوحدة</th>
+                      <th className="invoice-th" style={{ width: "40%" }}>
+                        المادة
+                      </th>
+                      <th
+                        className="invoice-th"
+                        style={{ textAlign: "center" }}
+                      >
+                        الكمية
+                      </th>
+                      <th className="invoice-th" style={{ textAlign: "left" }}>
+                        سعر الوحدة
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
                       <td className="invoice-td">{inv.materialName}</td>
-                      <td className="invoice-td" style={{ textAlign: 'center' }}>{inv.quantity.toLocaleString()} كجم</td>
-                      <td className="invoice-td" style={{ textAlign: 'left' }}>{inv.unitPrice.toLocaleString()} د.ج</td>
+                      <td
+                        className="invoice-td"
+                        style={{ textAlign: "center" }}
+                      >
+                        {inv.quantity.toLocaleString()} كجم
+                      </td>
+                      <td className="invoice-td" style={{ textAlign: "left" }}>
+                        {inv.unitPrice.toLocaleString()} د.ج
+                      </td>
                     </tr>
                   </tbody>
                 </table>
 
                 <div className="invoice-footer">
-                  <span style={{ fontSize: '14px', fontWeight: 700 }}>المبلغ الإجمالي</span>
-                  <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--primary-green)' }}>
+                  <span style={{ fontSize: "14px", fontWeight: 700 }}>
+                    المبلغ الإجمالي
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "18px",
+                      fontWeight: 800,
+                      color: "var(--primary-green)",
+                    }}
+                  >
                     {inv.totalPrice.toLocaleString()} د.ج
                   </span>
                 </div>
-                
+
                 <div className="flex-between">
                   <span className="text-sm">حالة الفاتورة</span>
                   <span className="badge badge-gold">✓ مكتملة ومعتمدة</span>
